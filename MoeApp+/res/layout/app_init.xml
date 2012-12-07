@@ -1,0 +1,57 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" 
+    android:orientation="vertical"
+    android:id="@+id/oauth_main"
+    >
+    
+   
+<ImageView 
+    android:layout_height="wrap_content"
+    android:layout_width="wrap_content"
+    android:src="@drawable/init"
+    android:scaleType="center"
+    android:layout_centerInParent="true"
+    android:id="@+id/init_logo"
+    
+    />
+
+
+    <WebView
+        android:id="@+id/oauth_wv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible"
+        />
+
+    <ProgressBar
+        android:id="@+id/init_progress"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/init_logo"
+        android:layout_centerHorizontal="true" />
+
+<TextView
+    android:id="@+id/oauth_success_text"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_above="@+id/start_moe"
+    android:text="授权成功！"
+    android:layout_centerHorizontal="true"
+    android:textSize="20sp" 
+    android:visibility="invisible"
+    />
+
+    <Button 
+        android:id="@+id/start_moe"
+        android:text="开始体验萌否音乐"
+        android:layout_width="wrap_content"
+        android:layout_height="100dp"
+        android:textSize="22sp"
+        android:visibility="invisible"
+        android:layout_centerInParent="true"
+        />
+    
+</RelativeLayout>

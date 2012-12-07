@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentTop="true"
+        android:id="@+id/player_upper"
+         >
+
+        <include
+            
+            layout="@layout/player_title" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:id="@+id/player_middle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/player_lower"
+        android:layout_below="@+id/player_upper" 
+        android:layout_marginTop="20dp"
+        >
+
+        <include layout="@layout/player_songview"
+            
+            />
+	<include 
+	    layout="@layout/player_listview"
+	    android:visibility="invisible"
+	    />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/player_lower"
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
+        android:layout_alignParentBottom="true" >
+
+        <include layout="@layout/player_controlset" />
+    </LinearLayout>
+
+</RelativeLayout>

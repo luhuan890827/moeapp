@@ -1,0 +1,22 @@
+<resources>
+
+    <string name="app_name">MoeApp</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_oauth">OAuthActivity</string>
+    <string name="title_activity_player">PlayerActivity</string>
+    <string name="oauth_hint">请输入以上的验证码</string>
+    <string name="oauth_submit">完成认证</string>
+    <string name="oauth_success">您已完成认证</string>
+    <string name="oauth_success_btn">开始体验萌否音乐！</string>
+    <string name="oauth_loading">载入中</string>
+    <string name="entrance_explore">随便看看</string>
+    <string name="entrance_oauth">应用授权</string>
+    <string name="entrance_info_description">点击查看信息</string>
+    <string name="title_activity_song_list">SongList</string>
+    <string name="title_activity_play_music">PlayMusic</string>
+    <string name="textview">TextView</string>
+    <string name="underlined_text"><u>tttt</u></string>
+	<string name="browse">musics</string>
+</resources>
