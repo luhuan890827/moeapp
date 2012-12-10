@@ -26,11 +26,13 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MusicBrowse extends Activity {
 	private ViewPager mViewPager;
@@ -40,7 +42,7 @@ public class MusicBrowse extends Activity {
 	private ProgressBar loadingProgress;
 	private TextView loadingMore;
 	private MoeOauth http;
-	//private Object lock = new Object();
+	// private Object lock = new Object();
 	private OnItemClickListener onMainCataClick = new OnMainCataClick();
 	private OnItemClickListener onWikiClick = new OnWikiItemClick();
 	private OnItemClickListener onSubClick = new OnSubItemClick();
@@ -61,11 +63,11 @@ public class MusicBrowse extends Activity {
 
 		http = new MoeOauth();
 		SharedPreferences pref = getSharedPreferences("token", MODE_PRIVATE);
-		//若token未设置成功（例如access_token为空）,则进行httprequest时将直接返回NULL
+		// 若token未设置成功（例如access_token为空）,则进行httprequest时将直接返回NULL
 		http.setToken(pref.getString("access_token", ""),
 				pref.getString("access_secret", ""));
 
-		getExploreInfo();
+		// getExploreInfo();
 		setViewPager();
 
 	}
@@ -73,7 +75,7 @@ public class MusicBrowse extends Activity {
 	@Override
 	public void onBackPressed() {
 		// TODO Auto-generated method stub
-		
+
 		Stack<AdapterDataSet> stack = vStatus.adapterDatas[mViewPager
 				.getCurrentItem()];
 		if (stack.isEmpty()) {
@@ -133,19 +135,24 @@ public class MusicBrowse extends Activity {
 	private void setViewPager() {
 		// TODO Auto-generated method stub
 		final String[] titles = { "发现音乐", "我的收藏", "本地音乐" };
-		vStatus.views = new ArrayList<View>();
-		vStatus.views.add(getVExplore());
-		vStatus.views.add(getVFavs());
-		vStatus.views.add(getVSaved());
-		PagerAdapter pa = new MyViewPagerAdapter(vStatus.views, titles);
+		ArrayList<View> wrappers = new ArrayList<View>();
+		wrappers.add(setVExplore());
+		wrappers.add(setVFavs());
+		wrappers.add(setVSaved());
+
+		PagerAdapter pa = new MyViewPagerAdapter(wrappers, titles);
 		mViewPager.setAdapter(pa);
 
 	}
 
-	private View getVSaved() {
+	private View setVSaved() {
 
 		// TODO Auto-generated method stub
-		View view = null;
+		LinearLayout ll = (LinearLayout) inflater.inflate(
+				R.layout.list_wrapper, null);
+
+		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
+		vStatus.views.add(listView);
 
 		MoeDbHelper dbHelper = new MoeDbHelper(this);
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -161,54 +168,53 @@ public class MusicBrowse extends Activity {
 		Cursor c = db.rawQuery("select _id,title,artist from local_songs_info",
 				null);
 
-		if (c == null || c.getCount() == 0) {
-			TextView t = (TextView) inflater.inflate(R.layout.big_text_item,
-					null);
-			t.setText("尚未保存歌曲到设备");
-			view = t;
-			c.close();
-			
-		} else {
-			ListAdapter adapter = new MyCursorAdapter(getApplicationContext(),
-					c, false);
-			//使用cursoradapter切勿调用cursor.close();
-			ListView lv = new ListView(this);
-			lv.setAdapter(adapter);
-			view = lv;
+		ListAdapter adapter = new MyCursorAdapter(getApplicationContext(), c,
+				false);
+		// 使用cursoradapter勿调用cursor.close();
+		listView.setAdapter(adapter);
 
-		}
-		db.close();
-		return view;
+		return ll;
 	}
 
-	private View getVFavs() {
+	private View setVFavs() {
 		// TODO Auto-generated method stub
-		ListView listView = new ListView(this);
+		LinearLayout ll = (LinearLayout) inflater.inflate(
+				R.layout.list_wrapper, null);
 
+		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
+		vStatus.views.add(listView);
+		// TextView tv = new TextView(this);
+		// tv.setText("not item");
+		// ll.addView(tv);
+		// tv.setVisibility(View.GONE);
+		// listView.setEmptyView(tv);
 		String[] tags = new String[] { "收藏的专辑>>", "收藏的电台>>", "喜欢的歌曲>>" };
 		ListAdapter adapter = new ArrayAdapter<String>(this,
 				R.layout.big_text_item, tags);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(onMainCataClick);
-		return listView;
+
+		return ll;
 	}
 
-	private View getVExplore() {
+	private View setVExplore() {
+		LinearLayout ll = (LinearLayout) inflater.inflate(
+				R.layout.list_wrapper, null);
 
-		ListView listView = new ListView(this);
-
+		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
+		vStatus.views.add(listView);
 		String[] tags = new String[] { "音乐热榜>>>", "精选电台>>>", "魔力播放>>>" };
 		ListAdapter adapter = new ArrayAdapter<String>(this,
 				R.layout.big_text_item, tags);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(onMainCataClick);
 
-		return listView;
+		return ll;
 	}
 
 	private class Status {
 
-		public List<View> views;
+		public List<View> views = new ArrayList<View>();
 		public HashMap<String, List<SimpleData>> datas = new HashMap<String, List<SimpleData>>();
 		public Stack<AdapterDataSet>[] adapterDatas = new Stack[] {
 				new Stack<AdapterDataSet>(), new Stack<AdapterDataSet>(),
@@ -229,7 +235,7 @@ public class MusicBrowse extends Activity {
 			AdapterDataSet set = new AdapterDataSet();
 			set.adapter = (ListAdapter) arg0.getAdapter();
 			set.onItemClickListener = arg0.getOnItemClickListener();
-			MyTask task = new MyTask();
+			WikiTask task = new WikiTask();
 			set.task = task;
 
 			vStatus.adapterDatas[mViewPager.getCurrentItem()].push(set);
@@ -239,7 +245,6 @@ public class MusicBrowse extends Activity {
 			String url = "http://api.moefou.org/music/subs.json?wiki_id="
 					+ wikiId;
 
-			loadingProgress.setVisibility(View.VISIBLE);
 			task.execute(url, clickedData.getArtist(), vStatus.views.get(0));
 
 		}
@@ -247,27 +252,106 @@ public class MusicBrowse extends Activity {
 
 	public class OnMainCataClick implements OnItemClickListener {
 
-		public void onItemClick(AdapterView<?> arg0, View arg1, final int arg2,
-				long arg3) {
+		public void onItemClick(final AdapterView<?> arg0, View arg1,
+				final int arg2, long arg3) {
 			AdapterDataSet set = new AdapterDataSet();
-			set.adapter = (ListAdapter) arg0.getAdapter();
+			ListView listView = (ListView) arg0;
+			set.adapter = listView.getAdapter();
 			set.onItemClickListener = arg0.getOnItemClickListener();
 			vStatus.adapterDatas[mViewPager.getCurrentItem()].push(set);
-
+			listView.addFooterView(loadingProgress);
 			arg0.setAdapter(null);
-			AsyncTask task = new AsyncTask<Object, Void, Void>() {
+
+			switch (mViewPager.getCurrentItem()) {
+			case 0:
+				clickAtMainExplore(arg2);
+
+				break;
+			case 1:
+				atMainFavs(arg2);
+
+				break;
+			case 2:
+
+				break;
+			default:
+				break;
+			}
+
+		}
+
+		private void atMainFavs(int arg2) {
+			switch (arg2) {
+			case 0:
+				showFavAlbums();
+				break;
+			case 1:
+				showFavRadios();
+				break;
+			case 2:
+				showFavSongs();
+				break;
+			default:
+				break;
+			}
+
+		}
+
+		private void showFavSongs() {
+			ListView listView = (ListView) vStatus.views.get(1);
+
+			FavTask task = new FavTask();
+			vStatus.adapterDatas[1].peek().task = task;
+
+			final String url = "http://api.moefou.org/user/favs/sub.json?obj_type=song&fav_type=1&perpage=25";
+			task.execute(url, "sub");
+
+		}
+
+		private void showFavRadios() {
+			ListView listView = (ListView) vStatus.views.get(1);
+
+			FavTask task = new FavTask();
+			vStatus.adapterDatas[1].peek().task = task;
+
+			final String url = "http://api.moefou.org/user/favs/wiki.json?obj_type=radio&fav_type=1&perpage=25";
+			task.execute(url, "wiki");
+		}
+
+		private void showFavAlbums() {
+			// TODO Auto-generated method stub
+			ListView listView = (ListView) vStatus.views.get(1);
+
+			FavTask task = new FavTask();
+			vStatus.adapterDatas[1].peek().task = task;
+
+			final String url = "http://api.moefou.org/user/favs/wiki.json?obj_type=music&fav_type=1&perpage=25";
+			task.execute(url, "wiki");
+
+		}
+
+		private void clickAtMainExplore(final int arg2) {
+			final ListView listView = (ListView) vStatus.views.get(0);
+			AsyncTask task = new AsyncTask<Object, Void, Boolean>() {
 
 				@Override
-				protected Void doInBackground(Object... params) {
-					while (vStatus.datas.size() == 0) {
-
+				protected Boolean doInBackground(Object... params) {
+					if (vStatus.datas.size() == 0) {
+						if (getExploreInfo()) {
+							return true;
+						}
+						return false;
 					}
-					return null;
+					return true;
 				}
 
-				protected void onPostExecute(Void result) {
-					switch (mViewPager.getCurrentItem()) {
-					case 0:
+				protected void onPostExecute(Boolean success) {
+					listView.removeFooterView(loadingProgress);
+
+					if (!success) {
+						Toast.makeText(getApplicationContext(), "网络似乎有问题哦",
+								Toast.LENGTH_SHORT).show();
+					} else {
 						switch (arg2) {
 						case 0:
 							showNewAlbumn();
@@ -281,34 +365,15 @@ public class MusicBrowse extends Activity {
 						default:
 							break;
 						}
-						break;
-					case 1:
-						switch (arg2) {
-						case 0:
-
-							break;
-						case 1:
-
-							break;
-						case 2:
-
-							break;
-						default:
-							break;
-						}
-						break;
-					case 2:
-
-						break;
-					default:
-						break;
 					}
-				};
+
+				}
+
 			};
-			set.task = task;
+			vStatus.adapterDatas[0].peek().task = task;
 			task.execute("");
 
-		}
+		};
 
 		private void startMagic() {
 			// TODO Auto-generated method stub
@@ -352,7 +417,7 @@ public class MusicBrowse extends Activity {
 
 	}
 
-	public class MyTask extends AsyncTask<Object, Void, Object[]> {
+	public class WikiTask extends AsyncTask<Object, Void, Object[]> {
 		@Override
 		protected void onPreExecute() {
 			// TODO Auto-generated method stub
@@ -386,6 +451,29 @@ public class MusicBrowse extends Activity {
 			ListAdapter adapter = (ListAdapter) result[1];
 			l.setAdapter(adapter);
 			l.removeFooterView(loadingProgress);
+
+		}
+
+	}
+
+	public class FavTask extends AsyncTask<String, Void, ListAdapter> {
+		@Override
+		protected ListAdapter doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			String json = http.oauthRequest(params[0]);
+			List<SimpleData> list = JSONUtils.getFavs(json, params[1]);
+			ListAdapter adapter = new SimpleDataAdapter(MusicBrowse.this, list);
+			return adapter;
+		}
+
+		@Override
+		protected void onPostExecute(ListAdapter result) {
+			// TODO Auto-generated method stub
+			super.onPostExecute(result);
+			ListView listView = (ListView) vStatus.views.get(mViewPager
+					.getCurrentItem());
+			listView.setAdapter(result);
+			listView.removeFooterView(loadingProgress);
 
 		}
 

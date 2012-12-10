@@ -46,7 +46,7 @@ public class AppInit extends Activity {
 		wv = (WebView) findViewById(R.id.oauth_wv);
 		mainLayout = (RelativeLayout) findViewById(R.id.oauth_main);
 		pref =getSharedPreferences("token", MODE_PRIVATE);
-		if (true) {
+		if (pref.contains("access_token")) {
 			startAlphaAnimation(1200, false);
 		} else {
 			ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
