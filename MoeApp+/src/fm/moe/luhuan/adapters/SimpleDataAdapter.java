@@ -8,6 +8,7 @@ import fm.moe.luhuan.beans.data.SimpleData;
 
 import android.content.Context;
 import android.text.Html;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,12 +50,15 @@ public class SimpleDataAdapter extends BaseAdapter {
 
 		TextView artist = (TextView) ll.findViewById(R.id.item_description);
 		TextView title = (TextView) ll.findViewById(R.id.item_title);
+		Log.e("id", item.getId()+"");
+		Log.e("title", item.getTitle()+"");
 		if (item.getArtist() == null || item.getArtist().equals("")) {
 			artist.setText("未知艺术家");
 		} else {
 			artist.setText(Html.fromHtml(item.getArtist()));
 		}
-
+		title.setTag(R.string.item_id,item.getId());
+		title.setTag(R.string.item_description,item.getDescription());
 		title.setText(Html.fromHtml(item.getTitle()));
 		return ll;
 	}

@@ -110,14 +110,16 @@ public class JSONUtils {
 		if(type.equals("wiki")){
 			for(int i = 0;i<arr.size();i++){
 				JSONObject obj = arr.getJSONObject(i).getJSONObject("obj");
-				//Log.e("jo", obj.toJSONString());
+				Log.e("jo", obj.toJSONString());
+				
 				SimpleData data = getSimpleData(obj);
+				Log.e("id", data.getId()+"");
 				l.add(data);
 			}
 		}else{
 			for(int i = 0;i<arr.size();i++){
 				JSONObject obj = arr.getJSONObject(i).getJSONObject("obj");
-				//Log.e("", obj.toJSONString());
+				Log.e("", obj.toJSONString());
 				SimpleData data = getSub(obj,"一些信息",true);
 				
 				l.add(data);

@@ -1,6 +1,7 @@
 package fm.moe.luhuan.activities;
 
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
@@ -115,7 +116,7 @@ public class MusicBrowse extends Activity {
 			return false;
 		}
 
-		Log.e("raw", json + "");
+		//Log.e("raw", json + "");
 		List<SimpleData> newAlbums = JSONUtils.getSimpelDataList(json,
 				"new_musics");
 		List<SimpleData> hotRadios = JSONUtils.getSimpelDataList(json,
@@ -237,17 +238,18 @@ public class MusicBrowse extends Activity {
 			set.task = task;
 
 			vStatus.adapterDatas[mViewPager.getCurrentItem()].push(set);
-			SimpleData clickedData = vStatus.datas.get(
-					arg0.getContentDescription()).get(arg2);
-			int wikiId = clickedData.getId();
+//			SimpleData clickedData = vStatus.datas.get(
+//					arg0.getContentDescription()).get(arg2);
+//			int wikiId = clickedData.getId();
 			String url = null;
-			if (type.equals("music")) {
-				url = "http://api.moefou.org/music/subs.json?wiki_id=" + wikiId;
-			} else if (type.equals("radio")) {
-				url = "http://moe.fm/listen/playlist?api=json&radio=" + wikiId;
-			}
+			url = "http://moe.fm/listen/playlist?api=json&"+type+"="+arg1.findViewById(R.id.item_title).getTag(R.string.item_id);
+//			if (type.equals("music")) {
+//				url = "http://api.moefou.org/music/subs.json?wiki_id=" + wikiId;
+//			} else if (type.equals("radio")) {
+//				url = "http://moe.fm/listen/playlist?api=json&radio=" + wikiId;
+//			}
 
-			task.execute(url, clickedData.getArtist(), vStatus.views.get(0));
+			task.execute(url, "some data", vStatus.views.get(mViewPager.getCurrentItem()));
 
 		}
 	}
@@ -270,7 +272,7 @@ public class MusicBrowse extends Activity {
 
 				break;
 			case 1:
-				atMainFavs(arg2);
+				clickAtMainFavs(arg2);
 
 				break;
 			case 2:
@@ -282,7 +284,7 @@ public class MusicBrowse extends Activity {
 
 		}
 
-		private void atMainFavs(int arg2) {
+		private void clickAtMainFavs(int arg2) {
 			switch (arg2) {
 			case 0:
 				showFavAlbums();
@@ -306,7 +308,7 @@ public class MusicBrowse extends Activity {
 			vStatus.adapterDatas[1].peek().task = task;
 
 			final String url = "http://api.moefou.org/user/favs/sub.json?obj_type=song&fav_type=1&perpage=25";
-			task.execute(url, "sub");
+			task.execute(url, "sub","single");
 
 		}
 
@@ -317,18 +319,18 @@ public class MusicBrowse extends Activity {
 			vStatus.adapterDatas[1].peek().task = task;
 
 			final String url = "http://api.moefou.org/user/favs/wiki.json?obj_type=radio&fav_type=1&perpage=25";
-			task.execute(url, "wiki");
+			task.execute(url, "wiki","radio");
 		}
 
 		private void showFavAlbums() {
 			// TODO Auto-generated method stub
 			ListView listView = (ListView) vStatus.views.get(1);
-
+			
 			FavTask task = new FavTask();
 			vStatus.adapterDatas[1].peek().task = task;
 
 			final String url = "http://api.moefou.org/user/favs/wiki.json?obj_type=music&fav_type=1&perpage=25";
-			task.execute(url, "wiki");
+			task.execute(url, "wiki","music");
 
 		}
 
@@ -438,14 +440,14 @@ public class MusicBrowse extends Activity {
 		@Override
 		protected Object[] doInBackground(Object... params) {
 			// TODO Auto-generated method stub
-			String url = (String) params[0];
+			
 			String json = http.oauthRequest((String) params[0]);
 			List<SimpleData> l = null;
-			if (url.indexOf("playlist") > 0) {
+			//if (url.indexOf("playlist") > 0) {
 				l = JSONUtils.getSimpleDataFromPlayList(json);
-			} else {
-				l = JSONUtils.getSubsList(json, (String) params[1]);
-			}
+//			} else {
+//				l = JSONUtils.getSubsList(json, (String) params[1]);
+//			}
 
 			ListAdapter adapter = new SimpleDataAdapter(MusicBrowse.this, l);
 
@@ -467,23 +469,32 @@ public class MusicBrowse extends Activity {
 
 	}
 
-	public class FavTask extends AsyncTask<String, Void, ListAdapter> {
+	public class FavTask extends AsyncTask<String, Void, Object[]> {
 		@Override
-		protected ListAdapter doInBackground(String... params) {
+		protected Object[] doInBackground(String... params) {
 			// TODO Auto-generated method stub
 			String json = http.oauthRequest(params[0]);
 			List<SimpleData> list = JSONUtils.getFavs(json, params[1]);
 			ListAdapter adapter = new SimpleDataAdapter(MusicBrowse.this, list);
-			return adapter;
+			Object[] res = new Object[]{adapter,params[1],params[2]};
+			return res;
 		}
 
 		@Override
-		protected void onPostExecute(ListAdapter result) {
+		protected void onPostExecute(Object[] result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
 			ListView listView = (ListView) vStatus.views.get(mViewPager
 					.getCurrentItem());
-			listView.setAdapter(result);
+			listView.setAdapter((ListAdapter) result[0]);
+			if(((String)result[1]).equals("wiki")){
+				
+				listView.setOnItemClickListener(onWikiClick);
+			}else{
+				
+				listView.setOnItemClickListener(onSubClick);
+			}
+			listView.setTag(result[2]);
 			listView.removeFooterView(loadingProgress);
 
 		}

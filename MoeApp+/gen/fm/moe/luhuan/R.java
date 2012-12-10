@@ -99,6 +99,8 @@ public final class R {
         public static final int entrance_info_description=0x7f05000d;
         public static final int entrance_oauth=0x7f05000c;
         public static final int hello_world=0x7f050001;
+        public static final int item_description=0x7f050014;
+        public static final int item_id=0x7f050013;
         public static final int menu_settings=0x7f050002;
         public static final int oauth_hint=0x7f050006;
         public static final int oauth_loading=0x7f05000a;
