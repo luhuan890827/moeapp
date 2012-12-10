@@ -15,15 +15,17 @@ import android.widget.BaseAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class SimpleDataAdapter extends BaseAdapter{
-	
+public class SimpleDataAdapter extends BaseAdapter {
+
 	private List<SimpleData> data;
 	private LayoutInflater inflater;
-	public SimpleDataAdapter(Context c,List<SimpleData> l){
-		
+
+	public SimpleDataAdapter(Context c, List<SimpleData> l) {
+
 		data = l;
 		inflater = LayoutInflater.from(c);
 	}
+
 	public int getCount() {
 		// TODO Auto-generated method stub
 		return data.size();
@@ -41,11 +43,18 @@ public class SimpleDataAdapter extends BaseAdapter{
 
 	public View getView(int position, View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
-		LinearLayout ll = (LinearLayout) inflater.inflate(R.layout.simple_list_item, null);
+		LinearLayout ll = (LinearLayout) inflater.inflate(
+				R.layout.simple_list_item, null);
 		SimpleData item = data.get(position);
+
 		TextView artist = (TextView) ll.findViewById(R.id.item_description);
 		TextView title = (TextView) ll.findViewById(R.id.item_title);
-		artist.setText(Html.fromHtml(item.getArtist()));
+		if (item.getArtist() == null || item.getArtist().equals("")) {
+			artist.setText("未知艺术家");
+		} else {
+			artist.setText(Html.fromHtml(item.getArtist()));
+		}
+
 		title.setText(Html.fromHtml(item.getTitle()));
 		return ll;
 	}

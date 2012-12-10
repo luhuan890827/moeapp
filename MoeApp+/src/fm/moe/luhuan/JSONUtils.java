@@ -43,7 +43,7 @@ public class JSONUtils {
 		return data;
 	}
 
-	private static SimpleData getSub(JSONObject obj, String description,boolean revseWiki) {
+	private static SimpleData getSub(JSONObject obj, String description,boolean reverseWiki) {
 		
 		SimpleData data = new SimpleData();
 		data.setId(obj.getIntValue("sub_id"));
@@ -107,7 +107,7 @@ public class JSONUtils {
 		List<SimpleData> l = new ArrayList<SimpleData>();
 		JSONArray arr = JSON.parseObject(json).getJSONObject("response")
 				.getJSONArray("favs");
-		if(type=="wiki"){
+		if(type.equals("wiki")){
 			for(int i = 0;i<arr.size();i++){
 				JSONObject obj = arr.getJSONObject(i).getJSONObject("obj");
 				//Log.e("jo", obj.toJSONString());
@@ -117,12 +117,30 @@ public class JSONUtils {
 		}else{
 			for(int i = 0;i<arr.size();i++){
 				JSONObject obj = arr.getJSONObject(i).getJSONObject("obj");
-				Log.e("", obj.toJSONString());
+				//Log.e("", obj.toJSONString());
 				SimpleData data = getSub(obj,"一些信息",true);
 				
 				l.add(data);
 			}
 		}
 		return l;
+	}
+	public static List<SimpleData> getSimpleDataFromPlayList(String json){
+		List<SimpleData> l = new ArrayList<SimpleData>();
+		JSONArray arr= JSON.parseObject(json).getJSONObject("response").getJSONArray("playlist");
+		for(int i = 0 ;i<arr.size();i++){
+			JSONObject obj = arr.getJSONObject(i);
+			SimpleData data = getSimpleDataFromPlayListItem(obj);
+			l.add(data);
+		}
+		return l;
+	}
+
+	private static SimpleData getSimpleDataFromPlayListItem(JSONObject obj) {
+		SimpleData data = new SimpleData();
+		data.setArtist(obj.getString("artist"));
+		data.setId(obj.getIntValue("sub_id"));
+		data.setTitle(obj.getString("sub_title"));
+		return data;
 	}
 }

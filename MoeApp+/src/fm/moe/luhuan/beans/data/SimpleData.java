@@ -4,6 +4,7 @@ public class SimpleData {
 	private int id;
 	private String artist;
 	private String title;
+	private String description;
 	public int getId() {
 		return id;
 	}
@@ -21,6 +22,12 @@ public class SimpleData {
 	}
 	public void setArtist(String artist) {
 		this.artist = artist;
+	}
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
 	}
 	
 }

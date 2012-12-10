@@ -1,5 +1,17 @@
 package fm.moe.luhuan.http;
 
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.scribe.builder.ServiceBuilder;
 import org.scribe.model.OAuthRequest;
 import org.scribe.model.Response;
@@ -41,13 +53,23 @@ public class MoeOauth {
 		String[] ss = {access_token,access_secret};
 		return ss;
 	}
-	public String oauthRequest(String url){
+	public String oauthRequest(String url) {
 		Log.e("url", url);
 		if(token!=null&&!token.isEmpty()){
 			OAuthRequest req = new OAuthRequest(Verb.GET, url);
+			req.setConnectTimeout(3000, TimeUnit.MILLISECONDS);
 			oService.signRequest(token, req);
 			Response resp = req.send();
+//			HttpParams params = new BasicHttpParams();
+//			HttpConnectionParams.setConnectionTimeout(params, 30000);
+//			HttpClient h = new DefaultHttpClient(params);
+//			
+//			HttpGet get = new HttpGet("");
+//			
+//			HttpResponse resp2 = h.execute(get);
 			return resp.getBody();
+			
+			
 		}else{
 			return null;
 		}

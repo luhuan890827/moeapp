@@ -184,10 +184,7 @@ public class MusicBrowse extends Activity {
 		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
 		vStatus.views.add(listView);
 		// TextView tv = new TextView(this);
-		// tv.setText("not item");
-		// ll.addView(tv);
-		// tv.setVisibility(View.GONE);
-		// listView.setEmptyView(tv);
+
 		String[] tags = new String[] { "收藏的专辑>>", "收藏的电台>>", "喜欢的歌曲>>" };
 		ListAdapter adapter = new ArrayAdapter<String>(this,
 				R.layout.big_text_item, tags);
@@ -233,6 +230,7 @@ public class MusicBrowse extends Activity {
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
 			AdapterDataSet set = new AdapterDataSet();
+			String type = (String) arg0.getTag();
 			set.adapter = (ListAdapter) arg0.getAdapter();
 			set.onItemClickListener = arg0.getOnItemClickListener();
 			WikiTask task = new WikiTask();
@@ -242,8 +240,12 @@ public class MusicBrowse extends Activity {
 			SimpleData clickedData = vStatus.datas.get(
 					arg0.getContentDescription()).get(arg2);
 			int wikiId = clickedData.getId();
-			String url = "http://api.moefou.org/music/subs.json?wiki_id="
-					+ wikiId;
+			String url = null;
+			if (type.equals("music")) {
+				url = "http://api.moefou.org/music/subs.json?wiki_id=" + wikiId;
+			} else if (type.equals("radio")) {
+				url = "http://moe.fm/listen/playlist?api=json&radio=" + wikiId;
+			}
 
 			task.execute(url, clickedData.getArtist(), vStatus.views.get(0));
 
@@ -389,6 +391,9 @@ public class MusicBrowse extends Activity {
 					MusicBrowse.this.getApplicationContext(), radios);
 
 			listView.setAdapter(adapter);
+			listView.setTag("radio");
+
+			listView.setOnItemClickListener(onWikiClick);
 
 		}
 
@@ -401,6 +406,7 @@ public class MusicBrowse extends Activity {
 			ListAdapter adapter = new SimpleDataAdapter(
 					MusicBrowse.this.getApplicationContext(), albums);
 			listView.setAdapter(adapter);
+			listView.setTag("music");
 			listView.setOnItemClickListener(onWikiClick);
 			//
 		}
@@ -432,10 +438,15 @@ public class MusicBrowse extends Activity {
 		@Override
 		protected Object[] doInBackground(Object... params) {
 			// TODO Auto-generated method stub
-
+			String url = (String) params[0];
 			String json = http.oauthRequest((String) params[0]);
-			List<SimpleData> l = JSONUtils
-					.getSubsList(json, (String) params[1]);
+			List<SimpleData> l = null;
+			if (url.indexOf("playlist") > 0) {
+				l = JSONUtils.getSimpleDataFromPlayList(json);
+			} else {
+				l = JSONUtils.getSubsList(json, (String) params[1]);
+			}
+
 			ListAdapter adapter = new SimpleDataAdapter(MusicBrowse.this, l);
 
 			Object[] res = new Object[] { params[2], adapter };
