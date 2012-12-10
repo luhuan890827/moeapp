@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_below="@+id/player_seek"
+    android:orientation="horizontal" >
+	<ImageButton android:id="@+id/ib_switch_act"
+	    android:contentDescription="the thumb of the playlist"
+	    android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_weight="1.00"
+        android:background="@drawable/stateful_btn"
+        
+	    />
+    <ImageButton
+        android:id="@+id/ib_prev"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_weight="1.00"
+        android:background="@drawable/stateful_btn"
+        android:src="@android:drawable/ic_media_previous" />
+
+    <ImageButton
+        android:id="@+id/ib_pp"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_weight="1"
+        android:background="@drawable/stateful_btn"
+        android:src="@android:drawable/ic_media_pause" />
+
+    <ImageButton
+        android:id="@+id/ib_next"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_weight="1"
+        android:background="@drawable/stateful_btn"
+        android:src="@android:drawable/ic_media_next" />
+
+</LinearLayout>
