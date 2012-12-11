@@ -19,6 +19,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
@@ -496,9 +498,11 @@ public class MusicBrowse extends Activity {
 			}
 			listView.setTag(result[2]);
 			listView.removeFooterView(loadingProgress);
-
+			
+			
 		}
 
 	}
+	private Handler mMessageHandler = new Handler(){};
 
 }
