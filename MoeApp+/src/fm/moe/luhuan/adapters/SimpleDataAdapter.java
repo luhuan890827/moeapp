@@ -50,17 +50,20 @@ public class SimpleDataAdapter extends BaseAdapter {
 
 		TextView artist = (TextView) ll.findViewById(R.id.item_description);
 		TextView title = (TextView) ll.findViewById(R.id.item_title);
-		Log.e("id", item.getId()+"");
-		Log.e("title", item.getTitle()+"");
+//		Log.e("id", item.getId()+"");
+//		Log.e("title", item.getTitle()+"");
 		if (item.getArtist() == null || item.getArtist().equals("")) {
 			artist.setText("未知艺术家");
 		} else {
 			artist.setText(Html.fromHtml(item.getArtist()));
 		}
-		title.setTag(R.string.item_id,item.getId());
-		title.setTag(R.string.item_description,item.getDescription());
+		ll.setTag(R.string.item_id,item.getId());
+		ll.setTag(R.string.item_description,item.getDescription());
 		title.setText(Html.fromHtml(item.getTitle()));
 		return ll;
+	}
+	public List<SimpleData> getData(){
+		return data;
 	}
 
 }

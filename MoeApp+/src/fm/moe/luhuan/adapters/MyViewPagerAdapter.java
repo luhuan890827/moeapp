@@ -6,12 +6,13 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 public class MyViewPagerAdapter extends PagerAdapter {
-	private List<View> viewList;
+	private List<LinearLayout> viewList;
 	private String[] titles;
 
-	public MyViewPagerAdapter(List<View> views, String[] str) {
+	public MyViewPagerAdapter(List<LinearLayout> views, String[] str) {
 		viewList = views;
 		titles = str;
 	}

@@ -3,20 +3,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
-  <ListView
-       	android:id="@+id/wrapped_list"
+
+    <ListView
+        android:id="@+id/wrapped_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+    </ListView>
+
+    <LinearLayout
+        android:id="@+id/hint_layout"
+        android:gravity="center"
+        android:padding="15dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
-    </ListView>
-    
-	<TextView 
-	    android:id="@+id/list_empty_hint"
-	    android:visibility="gone"
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:padding="10dp"
-	    android:gravity="center"
-	    android:textSize="22sp"
-	    />
+    </LinearLayout>
 
 </LinearLayout>

@@ -36,6 +36,7 @@ public final class R {
         public static final int fm_item_parent=0x7f080011;
         public static final int fm_item_thumb=0x7f08000e;
         public static final int fm_item_title=0x7f08000f;
+        public static final int hint_layout=0x7f080008;
         public static final int ib_fav=0x7f08001f;
         public static final int ib_next=0x7f080019;
         public static final int ib_pp=0x7f080018;
@@ -48,7 +49,6 @@ public final class R {
         public static final int item_description=0x7f080026;
         public static final int item_title=0x7f080025;
         public static final int listView1=0x7f08001d;
-        public static final int list_empty_hint=0x7f080008;
         public static final int main_wrapper=0x7f080009;
         public static final int menu_settings=0x7f080027;
         public static final int oauth_main=0x7f080000;
@@ -102,6 +102,8 @@ public final class R {
         public static final int item_description=0x7f050014;
         public static final int item_id=0x7f050013;
         public static final int menu_settings=0x7f050002;
+        public static final int more_btn_type=0x7f050016;
+        public static final int more_btn_url=0x7f050015;
         public static final int oauth_hint=0x7f050006;
         public static final int oauth_loading=0x7f05000a;
         public static final int oauth_submit=0x7f050007;
