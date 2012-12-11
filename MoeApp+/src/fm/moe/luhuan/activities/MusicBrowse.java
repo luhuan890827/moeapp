@@ -2,7 +2,6 @@ package fm.moe.luhuan.activities;
 
 import java.util.ArrayList;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
@@ -24,6 +23,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+
+import android.os.Message;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
@@ -69,7 +70,6 @@ public class MusicBrowse extends Activity {
 		http.setToken(pref.getString("access_token", ""),
 				pref.getString("access_secret", ""));
 
-		// getExploreInfo();
 		setViewPager();
 
 	}
@@ -93,6 +93,7 @@ public class MusicBrowse extends Activity {
 				.getCurrentItem()];
 		ListView lv = (ListView) vStatus.views.get(mViewPager.getCurrentItem());
 		clearHintView();
+		
 		AdapterDataSet dataset = stack.pop();
 		;
 		// Log.e("adapter", ""+adapter);
@@ -110,20 +111,23 @@ public class MusicBrowse extends Activity {
 					.getBooleanValue("has_error");
 
 			if (hasErr) {
-				Toast.makeText(MusicBrowse.this, "获取数据失败",
-						Toast.LENGTH_LONG).show();
-				backView();
-				return null;
+				atErr();
+
 			}
 
 		} catch (Exception e) {
 			Log.e("get JsonData Failed", "err", e);
-			Toast.makeText(getApplicationContext(), "获取数据失败", Toast.LENGTH_LONG)
-					.show();
-			backView();
-		}
+			atErr();
 
+		}
 		return json;
+	}
+
+	private void atErr() {
+		// TODO Auto-generated method stub
+		Message m = new Message();
+		m.what = -1;
+		mMessageHandler.sendMessage(m);
 	}
 
 	private boolean getExploreInfo() {
@@ -379,10 +383,7 @@ public class MusicBrowse extends Activity {
 
 				protected void onPostExecute(Boolean success) {
 					clearHintView();
-					if (!success) {
-						Toast.makeText(getApplicationContext(), "网络似乎有问题哦",
-								Toast.LENGTH_SHORT).show();
-					} else {
+					if (success) {
 						switch (arg2) {
 						case 0:
 							showNewAlbumn();
@@ -455,6 +456,8 @@ public class MusicBrowse extends Activity {
 	public String getUrl_more(String json) {
 		boolean hasNext = JSON.parseObject(json).getJSONObject("response")
 				.getJSONObject("information").getBooleanValue("may_have_next");
+		// Log.e("information", JSON.parseObject(json).getJSONObject("response")
+		// .getJSONObject("information").toJSONString());
 		String url_more = null;
 		if (hasNext) {
 			url_more = JSON.parseObject(json).getJSONObject("response")
@@ -510,6 +513,7 @@ public class MusicBrowse extends Activity {
 				
 				setHintView(tv);
 			}
+			
 		}
 
 	}
@@ -549,7 +553,7 @@ public class MusicBrowse extends Activity {
 						R.layout.big_text_item, null);
 				tv.setText("加载更多");
 				tv.setOnClickListener(onLoadMoreBtnClick);
-				
+
 				setHintView(tv);
 
 			}
@@ -557,7 +561,8 @@ public class MusicBrowse extends Activity {
 		}
 
 	}
-	public class loadMoreTask extends AsyncTask<Object, Integer, Object[]>{
+
+	public class loadMoreTask extends AsyncTask<Object, Integer, Object[]> {
 
 		@Override
 		protected Object[] doInBackground(Object... params) {
@@ -567,14 +572,17 @@ public class MusicBrowse extends Activity {
 			Object[] res = new Object[] { l, url_more };
 			return res;
 		}
+
 		@Override
 		protected void onPostExecute(Object[] result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
 			clearHintView();
-			SimpleDataAdapter adapter =(SimpleDataAdapter)vStatus.views.get(mViewPager.getCurrentItem()).getAdapter();
+			SimpleDataAdapter adapter = (SimpleDataAdapter) vStatus.views.get(
+					mViewPager.getCurrentItem()).getAdapter();
 			adapter.getData().addAll((List<SimpleData>) result[0]);
 			adapter.notifyDataSetChanged();
+			Log.e("next url", result[1] + "");
 			if (result[1] != null) {
 				TextView tv = (TextView) inflater.inflate(
 						R.layout.big_text_item, null);
@@ -585,8 +593,9 @@ public class MusicBrowse extends Activity {
 
 			}
 		}
-		
+
 	}
+
 	private OnClickListener onLoadMoreBtnClick = new OnClickListener() {
 
 		public void onClick(View v) {
@@ -594,14 +603,23 @@ public class MusicBrowse extends Activity {
 			ProgressBar pb = (ProgressBar) inflater.inflate(
 					R.layout.progress_view, null);
 			setHintView(pb);
-			//SimpleDataAdapter adapter = (SimpleDataAdapter)vStatus.views.get(mViewPager.getCurrentItem()).getAdapter();
+			// SimpleDataAdapter adapter =
+			// (SimpleDataAdapter)vStatus.views.get(mViewPager.getCurrentItem()).getAdapter();
 			String url = (String) v.getTag(R.string.more_btn_url);
 			loadMoreTask task = new loadMoreTask();
 			task.execute(url);
-			
+
 		}
 	};
 	private Handler mMessageHandler = new Handler() {
+		public void handleMessage(Message msg) {
+			if (msg.what == -1) {
+				Toast.makeText(getApplicationContext(), "无法连接到服务器哦",
+						Toast.LENGTH_LONG).show();
+				backView();
+			}
+
+		};
 	};
 
 }

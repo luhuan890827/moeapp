@@ -73,17 +73,18 @@ public final class R {
     public static final class layout {
         public static final int app_init=0x7f030000;
         public static final int big_text_item=0x7f030001;
-        public static final int list_wrapper=0x7f030002;
-        public static final int music_browse=0x7f030003;
-        public static final int play_list_item=0x7f030004;
-        public static final int player=0x7f030005;
-        public static final int player_control=0x7f030006;
-        public static final int player_controlset=0x7f030007;
-        public static final int player_listview=0x7f030008;
-        public static final int player_songview=0x7f030009;
-        public static final int player_title=0x7f03000a;
-        public static final int progress_view=0x7f03000b;
-        public static final int simple_list_item=0x7f03000c;
+        public static final int footer_view=0x7f030002;
+        public static final int list_wrapper=0x7f030003;
+        public static final int music_browse=0x7f030004;
+        public static final int play_list_item=0x7f030005;
+        public static final int player=0x7f030006;
+        public static final int player_control=0x7f030007;
+        public static final int player_controlset=0x7f030008;
+        public static final int player_listview=0x7f030009;
+        public static final int player_songview=0x7f03000a;
+        public static final int player_title=0x7f03000b;
+        public static final int progress_view=0x7f03000c;
+        public static final int simple_list_item=0x7f03000d;
     }
     public static final class menu {
         public static final int activity_main=0x7f070000;
