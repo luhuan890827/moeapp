@@ -1,8 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ProgressBar xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="wrap_content"
     android:layout_width="match_parent"
-    android:layout_height="50dp" 
-    android:layout_gravity="center">
+    android:padding="20dp"
+    android:orientation="vertical"
+    >
+    
+    <ProgressBar 
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" 
+    android:layout_gravity="center"
+    
+    
+    >
     
 
 </ProgressBar>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center" 
+        android:text="载入中..."
+        android:textSize="20sp"
+        />
+
+</LinearLayout>
