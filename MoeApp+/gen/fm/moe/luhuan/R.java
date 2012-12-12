@@ -103,6 +103,7 @@ public final class R {
         public static final int hello_world=0x7f050001;
         public static final int item_description=0x7f050014;
         public static final int item_id=0x7f050013;
+        public static final int item_mp3_url=0x7f050017;
         public static final int menu_settings=0x7f050002;
         public static final int more_btn_type=0x7f050016;
         public static final int more_btn_url=0x7f050015;
@@ -111,6 +112,8 @@ public final class R {
         public static final int oauth_submit=0x7f050007;
         public static final int oauth_success=0x7f050008;
         public static final int oauth_success_btn=0x7f050009;
+        public static final int play_list_id=0x7f050018;
+        public static final int play_list_type=0x7f050019;
         public static final int textview=0x7f050010;
         public static final int title_activity_main=0x7f050003;
         public static final int title_activity_oauth=0x7f050004;

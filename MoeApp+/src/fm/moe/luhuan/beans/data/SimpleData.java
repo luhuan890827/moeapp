@@ -1,10 +1,17 @@
 package fm.moe.luhuan.beans.data;
 
-public class SimpleData {
+import java.io.Serializable;
+
+public class SimpleData implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private int id;
 	private String artist;
 	private String title;
 	private String description;
+	private String mp3Url;
 	public int getId() {
 		return id;
 	}
@@ -28,6 +35,12 @@ public class SimpleData {
 	}
 	public void setDescription(String description) {
 		this.description = description;
+	}
+	public String getMp3Url() {
+		return mp3Url;
+	}
+	public void setMp3Url(String mp3Url) {
+		this.mp3Url = mp3Url;
 	}
 	
 }

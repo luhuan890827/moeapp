@@ -39,7 +39,7 @@ import android.widget.HeaderViewListAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.ProgressBar;
+
 
 import android.widget.TextView;
 import android.widget.Toast;
@@ -52,9 +52,7 @@ public class MusicBrowse extends Activity {
 	private LinearLayout loadingProgress ;
 	private MoeOauth http;
 	// private Object lock = new Object();
-	private OnItemClickListener onMainCataClick = new OnMainCataClick();
-	private OnItemClickListener onWikiClick = new OnWikiItemClick();
-	private OnItemClickListener onSubClick = new OnSubItemClick();
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -279,7 +277,12 @@ public class MusicBrowse extends Activity {
 		hint.removeAllViews();
 	}
 	
-	private class OnWikiItemClick implements OnItemClickListener {
+	
+	
+	
+	
+	
+	private OnItemClickListener onWikiClick = new OnItemClickListener(){
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
 			((ListView)arg0).removeFooterView(loadMoreBtn);
@@ -299,12 +302,13 @@ public class MusicBrowse extends Activity {
 					+ arg1.getTag(R.string.item_id) + "&perpage=20";
 
 			task.execute(url, "some data",
-					vStatus.views.get(mViewPager.getCurrentItem()));
+					vStatus.views.get(mViewPager.getCurrentItem()),arg1.getTag(R.string.item_id),type);
 
 		}
-	}
+	};
 
-	public class OnMainCataClick implements OnItemClickListener {
+	
+	 private OnItemClickListener onMainCataClick = new OnItemClickListener() {
 
 		public void onItemClick(final AdapterView<?> arg0, View arg1,
 				final int arg2, long arg3) {
@@ -469,17 +473,28 @@ public class MusicBrowse extends Activity {
 			//
 		}
 
-	}
-
-	public class OnSubItemClick implements OnItemClickListener {
+	};
+	private OnItemClickListener onSubClick = new OnItemClickListener() {
 
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
-			// TODO Auto-generated method stub
-
+			int footerCount = ((ListView)arg0).getFooterViewsCount();
+			SimpleDataAdapter adapter = null;
+			String className = arg0.getAdapter().getClass().getName();
+			if(className.indexOf("HeaderViewListAdapter")<0){
+				adapter = (SimpleDataAdapter) arg0.getAdapter();
+			}else{
+				HeaderViewListAdapter hAdapter = (HeaderViewListAdapter) arg0.getAdapter();
+				adapter = (SimpleDataAdapter) hAdapter.getWrappedAdapter();
+			}
+			List<SimpleData> playList = adapter.getData();
+			int playListId = (Integer) arg0.getTag(R.string.play_list_id);
+			Log.e("play info", "url="+arg1.getTag(R.string.item_mp3_url));
+			Log.e("play list id",arg0.getTag(R.string.play_list_id)+"");
+			Log.e("play list type", ""+arg0.getTag(R.string.play_list_type)+"");
 		}
 
-	}
+	};
 
 	public String getUrl_more(String json) {
 		boolean hasNext = JSON.parseObject(json).getJSONObject("response")
@@ -519,7 +534,7 @@ public class MusicBrowse extends Activity {
 
 			ListAdapter adapter = new SimpleDataAdapter(MusicBrowse.this, l);
 
-			Object[] res = new Object[] { params[2], adapter, url_more };
+			Object[] res = new Object[] { params[2], adapter, url_more,params[3] ,params[4]};
 			return res;
 		}
 
@@ -533,9 +548,13 @@ public class MusicBrowse extends Activity {
 			
 			listView.removeFooterView(loadingProgress);
 			//clearHintView();
+			listView.setTag(R.string.play_list_id,result[3]);
+			listView.setTag(R.string.play_list_type,result[4]);
+			listView.setOnItemClickListener(onSubClick);
 			if (result[2] != null) {
 				listView.addFooterView(loadMoreBtn);
 				loadMoreBtn.setTag(R.string.more_btn_url, result[2]);
+				
 				//Log.e("!!!!", "!!!!!!");
 //				TextView tv = (TextView) inflater.inflate(
 //						R.layout.big_text_item, null);
@@ -607,7 +626,7 @@ public class MusicBrowse extends Activity {
 
 	}
 
-	public class loadMoreTask extends AsyncTask<Object, Integer, Object[]> {
+	public class LoadMoreTaskPlayable extends AsyncTask<Object, Integer, Object[]> {
 
 		@Override
 		protected Object[] doInBackground(Object... params) {
@@ -655,7 +674,7 @@ public class MusicBrowse extends Activity {
 			// (SimpleDataAdapter)vStatus.views.get(mViewPager.getCurrentItem()).getAdapter();
 			v.findViewById(R.id.load_more_progress).setVisibility(View.VISIBLE);
 			String url = (String) v.getTag(R.string.more_btn_url);
-			loadMoreTask task = new loadMoreTask();
+			LoadMoreTaskPlayable task = new LoadMoreTaskPlayable();
 			task.execute(url);
 			
 		}

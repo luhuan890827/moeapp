@@ -46,6 +46,9 @@ public class SimpleDataAdapter extends BaseAdapter {
 		// TODO Auto-generated method stub
 		LinearLayout ll = (LinearLayout) inflater.inflate(
 				R.layout.simple_list_item, null);
+		//Log.e("class", data.get(position).getClass().toString());
+		
+		
 		SimpleData item = data.get(position);
 
 		TextView artist = (TextView) ll.findViewById(R.id.item_description);
@@ -59,6 +62,11 @@ public class SimpleDataAdapter extends BaseAdapter {
 		}
 		ll.setTag(R.string.item_id,item.getId());
 		ll.setTag(R.string.item_description,item.getDescription());
+		if(item.getMp3Url()!=null){
+			//Log.e("in adapter","mp3 url = " +item.getMp3Url());
+			ll.setTag(R.string.item_mp3_url,item.getMp3Url());
+		}
+		
 		title.setText(Html.fromHtml(item.getTitle()));
 		return ll;
 	}

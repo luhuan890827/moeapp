@@ -140,9 +140,11 @@ public class JSONUtils {
 
 	private static SimpleData getSimpleDataFromPlayListItem(JSONObject obj) {
 		SimpleData data = new SimpleData();
+		//Log.e("raw", obj.getString("url"));
 		data.setArtist(obj.getString("artist"));
 		data.setId(obj.getIntValue("sub_id"));
 		data.setTitle(obj.getString("sub_title"));
+		data.setMp3Url(obj.getString("url"));
 		return data;
 	}
 }

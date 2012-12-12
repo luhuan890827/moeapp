@@ -23,4 +23,7 @@
 	<string name="item_description"></string>
 	<string name="more_btn_url"></string>
 	<string name="more_btn_type"></string>
+	<string name="item_mp3_url"></string>
+	<string name="play_list_id"></string>
+	<string name="play_list_type"></string>
 </resources>

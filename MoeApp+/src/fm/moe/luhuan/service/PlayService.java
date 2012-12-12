@@ -2,7 +2,8 @@ package fm.moe.luhuan.service;
 
 import java.util.ArrayList;
 
-import fm.moe.luhuan.beans.data.PlayableData;
+
+import fm.moe.luhuan.beans.data.SimpleData;
 
 import android.app.Service;
 import android.content.Intent;
@@ -15,10 +16,10 @@ import android.util.Log;
 
 public class PlayService extends Service{
 	public MediaPlayer player = new MediaPlayer();
-	public ArrayList<PlayableData> playerList = new ArrayList<PlayableData>();
+	public ArrayList<SimpleData> playerList = new ArrayList<SimpleData>();
 	private PlayerBinder binder = new PlayerBinder();
 	public int nowPlayingIndex =-1;
-	private Handler mSender = new Handler();
+	
 	@Override
 	public void onCreate() {
 		// TODO Auto-generated method stub

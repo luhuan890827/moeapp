@@ -18,7 +18,7 @@
         
         <activity
             android:name=".activities.AppInit"
-            android:label="@string/title_activity_oauth" >
+            android:label="萌否音乐" >
             <intent-filter>
 	            <action android:name="android.intent.action.MAIN" />
 
