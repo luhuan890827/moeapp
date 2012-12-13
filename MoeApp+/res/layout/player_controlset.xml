@@ -43,7 +43,7 @@
          >
 
         <TextView
-            android:id="@+id/time_length"
+            android:id="@+id/time_played"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
@@ -55,12 +55,12 @@
             android:id="@+id/playing_seekbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-           	android:layout_toLeftOf="@+id/time_played"
-           	android:layout_toRightOf="@+id/time_length"
+           	android:layout_toLeftOf="@+id/time_remain"
+           		android:layout_toRightOf="@+id/time_played"
             android:layout_centerInParent="true" />
 
         <TextView
-            android:id="@+id/time_played"
+            android:id="@+id/time_remain"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"

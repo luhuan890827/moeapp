@@ -23,7 +23,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@color/transparent"
+                android:background="@drawable/stateful_btn"
                 android:scaleX="0.77"
         		android:scaleY="0.77"
                 android:src="@android:drawable/btn_star_big_off" />
@@ -35,7 +35,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@color/transparent"
+               android:background="@drawable/stateful_btn"
                 android:src="@android:drawable/stat_sys_download_done" />
 
             <ImageButton
@@ -43,7 +43,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@color/transparent"
+                android:background="@drawable/stateful_btn"
                 android:src="@android:drawable/ic_menu_share" />
         </LinearLayout>
 </RelativeLayout>

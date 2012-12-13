@@ -12,6 +12,7 @@ public final class R {
     }
     public static final class color {
         public static final int blue=0x7f040001;
+        public static final int deep_blue=0x7f040007;
         public static final int green=0x7f040002;
         public static final int light_gray=0x7f040005;
         public static final int light_pink=0x7f040006;
@@ -59,15 +60,15 @@ public final class R {
         public static final int player_middle=0x7f080014;
         public static final int player_seek=0x7f080016;
         public static final int player_upper=0x7f080013;
-        public static final int playing_albumn=0x7f080025;
-        public static final int playing_artist=0x7f080024;
         public static final int playing_seekbar=0x7f08001c;
-        public static final int playing_song=0x7f080023;
+        public static final int playing_song_albumn=0x7f080025;
+        public static final int playing_song_artist=0x7f080024;
+        public static final int playing_song_title=0x7f080023;
         public static final int simple_item_title=0x7f080006;
         public static final int start_moe=0x7f080005;
         public static final int tab_strip=0x7f08000e;
-        public static final int time_length=0x7f08001b;
-        public static final int time_played=0x7f08001d;
+        public static final int time_played=0x7f08001b;
+        public static final int time_remain=0x7f08001d;
         public static final int view_pager=0x7f08000c;
         public static final int wrapped_list=0x7f080007;
     }

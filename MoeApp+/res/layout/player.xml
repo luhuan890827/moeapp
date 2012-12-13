@@ -4,15 +4,12 @@
     android:layout_height="match_parent" >
 
     <LinearLayout
+        android:id="@+id/player_upper"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:layout_alignParentTop="true"
-        android:id="@+id/player_upper"
-         >
+        android:layout_alignParentTop="true" >
 
-        <include
-            
-            layout="@layout/player_title" />
+        <include layout="@layout/player_title" />
     </LinearLayout>
 
     <RelativeLayout
@@ -20,17 +17,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/player_lower"
-        android:layout_below="@+id/player_upper" 
-        android:layout_marginTop="20dp"
-        >
+        android:layout_below="@+id/player_upper"
+        android:layout_marginTop="20dp" >
 
-        <include layout="@layout/player_songview"
-            
-            />
-	<include 
-	    layout="@layout/player_listview"
-	    android:visibility="invisible"
-	    />
+        <include layout="@layout/player_songview" />
+
+        <include
+            layout="@layout/player_listview"
+            android:visibility="invisible" />
     </RelativeLayout>
 
     <LinearLayout

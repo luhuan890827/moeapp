@@ -17,6 +17,7 @@ import fm.moe.luhuan.adapters.SimpleDataAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.MoeOauth;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -492,6 +493,16 @@ public class MusicBrowse extends Activity {
 			Log.e("play info", "url="+arg1.getTag(R.string.item_mp3_url));
 			Log.e("play list id",arg0.getTag(R.string.play_list_id)+"");
 			Log.e("play list type", ""+arg0.getTag(R.string.play_list_type)+"");
+			Intent playIntent = new Intent(MusicBrowse.this, MusicPlay.class);
+			Bundle bundle = new Bundle();
+			
+			bundle.putSerializable("playList", (ArrayList<SimpleData>)playList);
+			bundle.putInt("selectedIndex", arg2);
+			bundle.putString("playListId", arg0.getTag(R.string.play_list_id)+"");
+			playIntent.putExtras(bundle);
+			
+			startActivity(playIntent);
+			
 		}
 
 	};

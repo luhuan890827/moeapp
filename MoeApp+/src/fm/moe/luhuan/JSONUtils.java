@@ -10,6 +10,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 import fm.moe.luhuan.beans.data.SimpleData;
+import fm.moe.luhuan.beans.data.SongDetail;
 
 public class JSONUtils {
 	private static SimpleData getSimpleData(JSONObject obj) {
@@ -146,5 +147,21 @@ public class JSONUtils {
 		data.setTitle(obj.getString("sub_title"));
 		data.setMp3Url(obj.getString("url"));
 		return data;
+	}
+	public static SongDetail getSongDetail(String json){
+		SongDetail detail = new SongDetail();
+		JSONObject subObj = JSON.parseObject(json).getJSONObject("response").getJSONObject("sub");
+		JSONObject wikiObj = subObj.getJSONObject("wiki");
+		JSONObject subFavObj = subObj.getJSONObject("sub_user_fav");
+		
+		if(subFavObj==null){
+			detail.setFav(false);
+		}else{
+			detail.setFav(true);
+		}
+		
+		
+		
+		return detail;
 	}
 }

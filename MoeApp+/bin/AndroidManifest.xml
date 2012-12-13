@@ -29,6 +29,10 @@
             android:name=".activities.MusicBrowse"
             android:label="@string/browse"
             ></activity>
+        <activity 
+            android:name=".activities.MusicPlay"
+            android:label="正在播放"
+            ></activity>
         <service android:name="fm.moe.luhuan.service.MusicService" />
         <service android:name="fm.moe.luhuan.service.MyService" />
         
