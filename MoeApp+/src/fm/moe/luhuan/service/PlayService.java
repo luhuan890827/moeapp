@@ -94,7 +94,7 @@ public class PlayService extends Service{
 		String url = playList.get(nowIndex).getMp3Url();
 		Uri uri = Uri.parse(url);
 		player.setDataSource(getApplicationContext(), uri);
-		//player.
+		//player. 
 	}
 
 
