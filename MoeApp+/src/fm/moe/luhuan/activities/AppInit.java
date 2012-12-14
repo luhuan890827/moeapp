@@ -3,7 +3,7 @@ package fm.moe.luhuan.activities;
 import org.scribe.model.Verifier;
 
 import fm.moe.luhuan.R;
-import fm.moe.luhuan.http.MoeOauth;
+import fm.moe.luhuan.http.MoeHttp;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -29,7 +29,7 @@ import android.widget.Toast;
 
 public class AppInit extends Activity {
 	private WebView wv;
-	private MoeOauth oauth = new MoeOauth();
+	private MoeHttp oauth = new MoeHttp();
 	private ImageView logo;
 	SharedPreferences pref;
 	String authUrl;

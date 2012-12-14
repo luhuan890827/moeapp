@@ -18,7 +18,9 @@
         android:layout_height="match_parent"
         android:layout_above="@+id/player_lower"
         android:layout_below="@+id/player_upper"
-        android:layout_marginTop="20dp" >
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="10dp"
+         >
 
         <include layout="@layout/player_songview" />
 

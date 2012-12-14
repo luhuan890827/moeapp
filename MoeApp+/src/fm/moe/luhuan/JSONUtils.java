@@ -13,7 +13,7 @@ import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.beans.data.SongDetail;
 
 public class JSONUtils {
-	private static SimpleData getSimpleData(JSONObject obj) {
+	public static SimpleData getWikiBean(JSONObject obj) {
 		SimpleData data = new SimpleData();
 		data.setTitle(obj.getString("wiki_title"));
 		data.setId(obj.getIntValue("wiki_id"));
@@ -26,94 +26,70 @@ public class JSONUtils {
 			String val = t.getString("meta_value");
 			int type = t.getIntValue("meta_type");
 			if (key.contains("简介")) {
-				artist = val;
-			}
-			if (key.contains("艺术")) {
 				description = val;
 			}
+			if (key.contains("艺术")||key.contains("演唱")) {
+				artist = val;
+			}
 
 		}
-		if (artist!= null) {
-			data.setArtist(artist);
-		} else if(description!=null){
-			data.setArtist(description);
-		}else{
-			data.setArtist("未知艺术家");
-		}
-
+		data.setAlbumnCoverUrl(obj.getJSONObject("wiki_cover").getString("large"));
+		data.setArtist(artist);
+		data.setDescription(description);
+		
 		return data;
 	}
 
-	private static SimpleData getSub(JSONObject obj, String description,boolean reverseWiki) {
-		
+	private static SimpleData getSub(JSONObject obj) {
+		//Log.e("fav_sub_raw", obj.toJSONString());
 		SimpleData data = new SimpleData();
 		data.setId(obj.getIntValue("sub_id"));
 		data.setTitle(obj.getString("sub_title"));
-		String info = null;
-		JSONArray arr = obj.getJSONArray("sub_meta");
-		if (arr != null) {
-			for (int i = 0; i < arr.size(); i++) {
-				JSONObject t = arr.getJSONObject(i);
-				String key = t.getString("meta_key");
-				String val = t.getString("meta_value");
-				int type = t.getIntValue("meta_type");
-				if (key.contains("演唱")||key.contains("简介")) {
-					info = val;
-					break;
-				}
-
-			}
-
-		}
-		SimpleData wikiData = null;
-		if(obj.getJSONObject("wiki")!=null){
-			wikiData = getSimpleData(obj.getJSONObject("wiki"));
-		}
-		
-		
-		if(wikiData!=null){
-			info = wikiData.getArtist();
-		}else
-		if (info == null) {
-			info = description;
-		}
-		data.setArtist(info);
+		SimpleData wikiData = getWikiBean(obj.getJSONObject("wiki"));
+		data.setArtist(wikiData.getArtist());
+		data.setDescription(wikiData.getDescription());
+		data.setParentId(wikiData.getId());
+		data.setAlbumnCoverUrl(wikiData.getAlbumnCoverUrl());
+		data.setParentTitle(wikiData.getParentTitle());
+		//data.setArtist(info);
 		return data;
 
 	}
 
-	public static List<SimpleData> getSimpelDataList(String json, String key) {
+	public static List<SimpleData> getExpWikiList(String json, String key) {
 		List<SimpleData> l = new ArrayList<SimpleData>();
 		JSONArray arr = JSON.parseObject(json).getJSONObject("response")
 				.getJSONArray(key);
 		for (int i = 0; i < arr.size(); i++) {
-			SimpleData data = getSimpleData(arr.getJSONObject(i));
+			SimpleData data = getWikiBean(arr.getJSONObject(i));
 			l.add(data);
 		}
 		return l;
 	}
 
-	public static List<SimpleData> getSubsList(String json, String description) {
-		List<SimpleData> l = new ArrayList<SimpleData>();
-		JSONArray arr = JSON.parseObject(json).getJSONObject("response")
-				.getJSONArray("subs");
-		for (int i = 0; i < arr.size(); i++) {
-			SimpleData data = getSub(arr.getJSONObject(i), description,false);
-			l.add(data);
-		}
-		return l;
-	}
+//	public static List<SimpleData> getSubsList(String json, String description) {
+//		List<SimpleData> l = new ArrayList<SimpleData>();
+//		JSONArray arr = JSON.parseObject(json).getJSONObject("response")
+//				.getJSONArray("subs");
+//		for (int i = 0; i < arr.size(); i++) {
+//			SimpleData data = getSub(arr.getJSONObject(i), description,false);
+//			l.add(data);
+//		}
+//		return l;
+//	}
 
 	public static List<SimpleData> getFavs(String json, String type) {
 		List<SimpleData> l = new ArrayList<SimpleData>();
 		JSONArray arr = JSON.parseObject(json).getJSONObject("response")
 				.getJSONArray("favs");
+		//Log.e("fav raw", json);
 		if(type.equals("wiki")){
 			for(int i = 0;i<arr.size();i++){
 				JSONObject obj = arr.getJSONObject(i).getJSONObject("obj");
 				//Log.e("jo", obj.toJSONString());
 				
-				SimpleData data = getSimpleData(obj);
+				SimpleData data = getWikiBean(obj);
+				data.setFav(true);
 				//Log.e("id", data.getId()+"");
 				l.add(data);
 			}
@@ -121,8 +97,8 @@ public class JSONUtils {
 			for(int i = 0;i<arr.size();i++){
 				JSONObject obj = arr.getJSONObject(i).getJSONObject("obj");
 				//Log.e("", obj.toJSONString());
-				SimpleData data = getSub(obj,"一些信息",true);
-				
+				SimpleData data = getSub(obj);
+				data.setFav(true);
 				l.add(data);
 			}
 		}
@@ -146,22 +122,13 @@ public class JSONUtils {
 		data.setId(obj.getIntValue("sub_id"));
 		data.setTitle(obj.getString("sub_title"));
 		data.setMp3Url(obj.getString("url"));
+		data.setAlbumnCoverUrl(obj.getJSONObject("cover").getString("large"));
+		if(obj.getJSONObject("fav_sub")!=null){
+			data.setFav(true);
+		}
+		data.setParentTitle(obj.getString("wiki_title"));
+		data.setParentId(obj.getIntValue("wiki_id"));
 		return data;
 	}
-	public static SongDetail getSongDetail(String json){
-		SongDetail detail = new SongDetail();
-		JSONObject subObj = JSON.parseObject(json).getJSONObject("response").getJSONObject("sub");
-		JSONObject wikiObj = subObj.getJSONObject("wiki");
-		JSONObject subFavObj = subObj.getJSONObject("sub_user_fav");
-		
-		if(subFavObj==null){
-			detail.setFav(false);
-		}else{
-			detail.setFav(true);
-		}
-		
-		
-		
-		return detail;
-	}
+	
 }

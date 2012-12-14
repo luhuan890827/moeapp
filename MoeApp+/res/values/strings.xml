@@ -21,9 +21,12 @@
 	<string name="browse">musics</string>
 	<string name="item_id"></string>
 	<string name="item_description"></string>
+	<string name="wiki_type"></string>
 	<string name="more_btn_url"></string>
 	<string name="more_btn_type"></string>
 	<string name="item_mp3_url"></string>
 	<string name="play_list_id"></string>
 	<string name="play_list_type"></string>
+	<string name="item_fav"></string>
+	<string name="song_parent_id"></string>
 </resources>

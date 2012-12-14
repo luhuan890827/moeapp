@@ -51,23 +51,29 @@ public class SimpleDataAdapter extends BaseAdapter {
 		
 		SimpleData item = data.get(position);
 
-		TextView artist = (TextView) ll.findViewById(R.id.item_description);
+		TextView tag = (TextView) ll.findViewById(R.id.item_description);
 		TextView title = (TextView) ll.findViewById(R.id.item_title);
 //		Log.e("id", item.getId()+"");
 //		Log.e("title", item.getTitle()+"");
-		if (item.getArtist() == null || item.getArtist().equals("")) {
-			artist.setText("未知艺术家");
-		} else {
-			artist.setText(Html.fromHtml(item.getArtist()));
+		String tagText = item.getArtist();
+		if(tagText==null||tagText.equals("")){
+			tagText=item.getDescription();
+			if(tagText==null||tagText.equals("")){
+				tagText="未知艺术家";
+			}
 		}
 		ll.setTag(R.string.item_id,item.getId());
-		ll.setTag(R.string.item_description,item.getDescription());
-		if(item.getMp3Url()!=null){
-			//Log.e("in adapter","mp3 url = " +item.getMp3Url());
-			ll.setTag(R.string.item_mp3_url,item.getMp3Url());
-		}
-		
+//		ll.setTag(R.string.item_description,item.getDescription());
+//		ll.setTag(R.string.item_fav,item.isFav());
+//		if(item.getMp3Url()!=null){
+//			//Log.e("in adapter","mp3 url = " +item.getMp3Url());
+//			ll.setTag(R.string.item_mp3_url,item.getMp3Url());
+//		}
+//		if(item.getParentId()!=-1){
+//			ll.setTag(R.string.song_parent_id,item.getId());
+//		}
 		title.setText(Html.fromHtml(item.getTitle()));
+		tag.setText(Html.fromHtml(tagText));
 		return ll;
 	}
 	public List<SimpleData> getData(){

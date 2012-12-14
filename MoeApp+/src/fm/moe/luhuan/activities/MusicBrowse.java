@@ -15,7 +15,7 @@ import fm.moe.luhuan.adapters.MyCursorAdapter;
 import fm.moe.luhuan.adapters.MyViewPagerAdapter;
 import fm.moe.luhuan.adapters.SimpleDataAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
-import fm.moe.luhuan.http.MoeOauth;
+import fm.moe.luhuan.http.MoeHttp;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -51,7 +51,7 @@ public class MusicBrowse extends Activity {
 	private LayoutInflater inflater;
 	private LinearLayout loadMoreBtn;
 	private LinearLayout loadingProgress ;
-	private MoeOauth http;
+	private MoeHttp http;
 	// private Object lock = new Object();
 	
 
@@ -70,7 +70,7 @@ public class MusicBrowse extends Activity {
 		// mainWrapper = (RelativeLayout) findViewById(R.id.main_wrapper);
 		mViewPager = (ViewPager) findViewById(R.id.view_pager);
 
-		http = new MoeOauth();
+		http = new MoeHttp();
 		SharedPreferences pref = getSharedPreferences("token", MODE_PRIVATE);
 		// 若token未设置成功（例如access_token为空）,则进行httprequest时将直接返回NULL
 		http.setToken(pref.getString("access_token", ""),
@@ -145,12 +145,12 @@ public class MusicBrowse extends Activity {
 		}
 
 		// Log.e("raw", json + "");
-		List<SimpleData> newAlbums = JSONUtils.getSimpelDataList(json,
+		List<SimpleData> newAlbums = JSONUtils.getExpWikiList(json,
 				"new_musics");
-		List<SimpleData> hotRadios = JSONUtils.getSimpelDataList(json,
+		List<SimpleData> hotRadios = JSONUtils.getExpWikiList(json,
 				"hot_radios");
-		List<SimpleData> musics = JSONUtils.getSimpelDataList(json, "musics");
-		List<SimpleData> hotMusics = JSONUtils.getSimpelDataList(json,
+		List<SimpleData> musics = JSONUtils.getExpWikiList(json, "musics");
+		List<SimpleData> hotMusics = JSONUtils.getExpWikiList(json,
 				"hot_musics");
 		
 		vStatus.datas.put("newAlbums", newAlbums);
@@ -302,7 +302,7 @@ public class MusicBrowse extends Activity {
 			url = "http://moe.fm/listen/playlist?api=json&" + type + "="
 					+ arg1.getTag(R.string.item_id) + "&perpage=20";
 
-			task.execute(url, "some data",
+			task.execute(url, 
 					vStatus.views.get(mViewPager.getCurrentItem()),arg1.getTag(R.string.item_id),type);
 
 		}
@@ -489,16 +489,17 @@ public class MusicBrowse extends Activity {
 				adapter = (SimpleDataAdapter) hAdapter.getWrappedAdapter();
 			}
 			List<SimpleData> playList = adapter.getData();
-			int playListId = (Integer) arg0.getTag(R.string.play_list_id);
-			Log.e("play info", "url="+arg1.getTag(R.string.item_mp3_url));
-			Log.e("play list id",arg0.getTag(R.string.play_list_id)+"");
-			Log.e("play list type", ""+arg0.getTag(R.string.play_list_type)+"");
+			
+//			Log.e("play info", "url="+arg1.getTag(R.string.item_mp3_url));
+//			Log.e("play list id",arg0.getTag(R.string.play_list_id)+"");
+//			Log.e("play list type", ""+arg0.getTag(R.string.play_list_type)+"");
 			Intent playIntent = new Intent(MusicBrowse.this, MusicPlay.class);
 			Bundle bundle = new Bundle();
 			
 			bundle.putSerializable("playList", (ArrayList<SimpleData>)playList);
 			bundle.putInt("selectedIndex", arg2);
 			bundle.putString("playListId", arg0.getTag(R.string.play_list_id)+"");
+			
 			playIntent.putExtras(bundle);
 			
 			startActivity(playIntent);
@@ -534,7 +535,11 @@ public class MusicBrowse extends Activity {
 			super.onPreExecute();
 
 		}
-
+		/*@params url,vStatus.views.get(mViewPager.getCurrentItem()),arg1.getTag(R.string.item_id),type
+		 *目标url,listview容器，wiki_id,wiki_type
+		 * 
+		 * 
+		 * */
 		@Override
 		protected Object[] doInBackground(Object... params) {
 			// TODO Auto-generated method stub
@@ -545,7 +550,7 @@ public class MusicBrowse extends Activity {
 
 			ListAdapter adapter = new SimpleDataAdapter(MusicBrowse.this, l);
 
-			Object[] res = new Object[] { params[2], adapter, url_more,params[3] ,params[4]};
+			Object[] res = new Object[] { params[1], adapter, url_more,params[2] ,params[3]};
 			return res;
 		}
 
