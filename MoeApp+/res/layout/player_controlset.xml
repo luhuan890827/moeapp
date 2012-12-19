@@ -15,7 +15,7 @@
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1.00"
-            android:background="@color/transparent"
+            android:background="@drawable/stateful_btn"
             android:src="@android:drawable/ic_media_previous" />
 
         <ImageButton
@@ -23,15 +23,15 @@
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
-            android:background="@color/transparent"
-            android:src="@android:drawable/ic_media_pause" />
+            android:background="@drawable/stateful_btn"
+            android:src="@android:drawable/ic_media_play" />
 
         <ImageButton
             android:id="@+id/ib_next"
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
-            android:background="@color/transparent"
+            android:background="@drawable/stateful_btn"
             android:src="@android:drawable/ic_media_next" />
     </LinearLayout>
 

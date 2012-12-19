@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-
+<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-sdk
         android:minSdkVersion="8"
         android:targetSdkVersion="15" />
@@ -32,9 +32,10 @@
         <activity 
             android:name=".activities.MusicPlay"
             android:label="正在播放"
+            android:launchMode="singleInstance"
             ></activity>
         <service android:name=".service.PlayService" />
-        
+        <service android:name=".service.DownloadService"></service>
         
     </application>
 

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 
 import com.alibaba.fastjson.JSON;
@@ -16,11 +17,17 @@ import fm.moe.luhuan.adapters.MyViewPagerAdapter;
 import fm.moe.luhuan.adapters.SimpleDataAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.MoeHttp;
+import fm.moe.luhuan.service.DownloadService;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.ConnectivityManager;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -41,7 +48,6 @@ import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
-
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,33 +56,54 @@ public class MusicBrowse extends Activity {
 	private Status vStatus = new Status();
 	private LayoutInflater inflater;
 	private LinearLayout loadMoreBtn;
-	private LinearLayout loadingProgress ;
+	private LinearLayout loadingProgress;
 	private MoeHttp http;
+
 	// private Object lock = new Object();
-	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
+		
 		super.onCreate(savedInstanceState);
 		setTheme(android.R.style.Theme_Holo);
 		setContentView(R.layout.music_browse);
 		inflater = LayoutInflater.from(this);
 		loadingProgress = (LinearLayout) inflater.inflate(
 				R.layout.progress_view, null);
-		loadMoreBtn = (LinearLayout) inflater.inflate(R.layout.load_more_view, null);
+		loadMoreBtn = (LinearLayout) inflater.inflate(R.layout.load_more_view,
+				null);
 		loadMoreBtn.setOnClickListener(onLoadMoreBtnClick);
-		
+
 		// mainWrapper = (RelativeLayout) findViewById(R.id.main_wrapper);
 		mViewPager = (ViewPager) findViewById(R.id.view_pager);
 
-		http = new MoeHttp();
+		http = new MoeHttp(this);
 		SharedPreferences pref = getSharedPreferences("token", MODE_PRIVATE);
 		// 若token未设置成功（例如access_token为空）,则进行httprequest时将直接返回NULL
-		http.setToken(pref.getString("access_token", ""),
-				pref.getString("access_secret", ""));
+		
 
 		setViewPager();
+		
+		
+		
+		
+		//test code
+//		IntentFilter intentFilter = new IntentFilter();
+//		intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+//		intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+//		registerReceiver(new BroadcastReceiver() {
+//			
+//			@Override
+//			public void onReceive(Context context, Intent intent) {
+//				Bundle b = intent.getExtras();
+//				Set<String> keySet =b.keySet();
+//				
+//				for (String string : keySet) {
+//					Log.e(string, b.get(string)+"");
+//				}
+//			}
+//		},intentFilter );
 
 	}
 
@@ -100,7 +127,6 @@ public class MusicBrowse extends Activity {
 		ListView lv = (ListView) vStatus.views.get(mViewPager.getCurrentItem());
 		lv.removeFooterView(loadingProgress);
 		lv.removeFooterView(loadMoreBtn);
-		//clearHintView();
 		AdapterDataSet dataset = stack.pop();
 		// Log.e("adapter", ""+adapter);
 		dataset.task.cancel(true);
@@ -152,7 +178,7 @@ public class MusicBrowse extends Activity {
 		List<SimpleData> musics = JSONUtils.getExpWikiList(json, "musics");
 		List<SimpleData> hotMusics = JSONUtils.getExpWikiList(json,
 				"hot_musics");
-		
+
 		vStatus.datas.put("newAlbums", newAlbums);
 		vStatus.datas.put("hotRadios", hotRadios);
 		vStatus.datas.put("musics", musics);
@@ -183,7 +209,7 @@ public class MusicBrowse extends Activity {
 		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
 		vStatus.views.add(listView);
 		LinearLayout hint = (LinearLayout) ll.findViewById(R.id.hint_layout);
-		//vStatus.hintViews.add(hint);
+		// vStatus.hintViews.add(hint);
 		MoeDbHelper dbHelper = new MoeDbHelper(this);
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		// ContentValues cv = new ContentValues();
@@ -201,7 +227,7 @@ public class MusicBrowse extends Activity {
 		ListAdapter adapter = new MyCursorAdapter(getApplicationContext(), c,
 				false);
 		// 使用cursoradapter勿调用cursor.close();
-		
+
 		listView.setAdapter(adapter);
 
 		return ll;
@@ -215,13 +241,14 @@ public class MusicBrowse extends Activity {
 		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
 		vStatus.views.add(listView);
 		LinearLayout hint = (LinearLayout) ll.findViewById(R.id.hint_layout);
-		//vStatus.hintViews.add(hint);
+		// vStatus.hintViews.add(hint);
 
 		String[] tags = new String[] { "收藏的专辑>>", "收藏的电台>>", "喜欢的歌曲>>" };
 		ListAdapter adapter = new ArrayAdapter<String>(this,
 				R.layout.big_text_item, tags);
-//		LinearLayout footer = (LinearLayout) inflater.inflate(R.layout.footer_view, null);
-//		listView.addFooterView(footer);
+		// LinearLayout footer = (LinearLayout)
+		// inflater.inflate(R.layout.footer_view, null);
+		// listView.addFooterView(footer);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(onMainCataClick);
 
@@ -234,20 +261,20 @@ public class MusicBrowse extends Activity {
 
 		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
 		LinearLayout hint = (LinearLayout) ll.findViewById(R.id.hint_layout);
-		//vStatus.hintViews.add(hint);
+		// vStatus.hintViews.add(hint);
 		vStatus.views.add(listView);
 		String[] tags = new String[] { "音乐热榜>>>", "精选电台>>>", "魔力播放>>>" };
 		ListAdapter adapter = new ArrayAdapter<String>(this,
 				R.layout.big_text_item, tags);
 		/**/
-//		LinearLayout footer = (LinearLayout) inflater.inflate(R.layout.footer_view, null);
-//		listView.addFooterView(footer);
-		//vStatus.footers.add(footer);
-		
+		// LinearLayout footer = (LinearLayout)
+		// inflater.inflate(R.layout.footer_view, null);
+		// listView.addFooterView(footer);
+		// vStatus.footers.add(footer);
+
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(onMainCataClick);
-		
-		
+
 		return ll;
 	}
 
@@ -277,39 +304,33 @@ public class MusicBrowse extends Activity {
 		LinearLayout hint = vStatus.hintViews.get(mViewPager.getCurrentItem());
 		hint.removeAllViews();
 	}
-	
-	
-	
-	
-	
-	
-	private OnItemClickListener onWikiClick = new OnItemClickListener(){
+
+	private OnItemClickListener onWikiClick = new OnItemClickListener() {
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
-			((ListView)arg0).removeFooterView(loadMoreBtn);
+			((ListView) arg0).removeFooterView(loadMoreBtn);
 			AdapterDataSet set = new AdapterDataSet();
 			String type = (String) arg0.getTag();
 			set.adapter = (ListAdapter) arg0.getAdapter();
 			set.onItemClickListener = arg0.getOnItemClickListener();
 			WikiTask task = new WikiTask();
 			set.task = task;
-//			TextView t = new TextView(getApplicationContext());
-//			t.setText("1234");
-			//vStatus.footers.get(0).addView(t);
+			// TextView t = new TextView(getApplicationContext());
+			// t.setText("1234");
+			// vStatus.footers.get(0).addView(t);
 			vStatus.adapterDatas[mViewPager.getCurrentItem()].push(set);
-			
+
 			String url = null;
 			url = "http://moe.fm/listen/playlist?api=json&" + type + "="
 					+ arg1.getTag(R.string.item_id) + "&perpage=20";
 
-			task.execute(url, 
-					vStatus.views.get(mViewPager.getCurrentItem()),arg1.getTag(R.string.item_id),type);
+			task.execute(url, vStatus.views.get(mViewPager.getCurrentItem()),
+					arg1.getTag(R.string.item_id), type);
 
 		}
 	};
 
-	
-	 private OnItemClickListener onMainCataClick = new OnItemClickListener() {
+	private OnItemClickListener onMainCataClick = new OnItemClickListener() {
 
 		public void onItemClick(final AdapterView<?> arg0, View arg1,
 				final int arg2, long arg3) {
@@ -319,13 +340,11 @@ public class MusicBrowse extends Activity {
 			set.onItemClickListener = arg0.getOnItemClickListener();
 			vStatus.adapterDatas[mViewPager.getCurrentItem()].push(set);
 			// use hint
-//			ProgressBar pb = (ProgressBar) inflater.inflate(
-//					R.layout.progress_view, null);
-//			setHintView(pb);
-			
-			
+			// ProgressBar pb = (ProgressBar) inflater.inflate(
+			// R.layout.progress_view, null);
+			// setHintView(pb);
+
 			// Log.e("main caa", "");
-			
 
 			switch (mViewPager.getCurrentItem()) {
 			case 0:
@@ -393,7 +412,7 @@ public class MusicBrowse extends Activity {
 		}
 
 		private void clickAtMainExplore(final int arg2) {
-			
+
 			AsyncTask task = new AsyncTask<Object, Void, Boolean>() {
 				@Override
 				protected void onPreExecute() {
@@ -402,6 +421,7 @@ public class MusicBrowse extends Activity {
 					vStatus.views.get(0).addFooterView(loadingProgress);
 					vStatus.views.get(0).setAdapter(null);
 				}
+
 				@Override
 				protected Boolean doInBackground(Object... params) {
 					if (vStatus.datas.size() == 0) {
@@ -414,7 +434,7 @@ public class MusicBrowse extends Activity {
 				}
 
 				protected void onPostExecute(Boolean success) {
-					
+
 					vStatus.views.get(0).removeFooterView(loadingProgress);
 					if (success) {
 						switch (arg2) {
@@ -479,31 +499,34 @@ public class MusicBrowse extends Activity {
 
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
-			int footerCount = ((ListView)arg0).getFooterViewsCount();
+			int footerCount = ((ListView) arg0).getFooterViewsCount();
 			SimpleDataAdapter adapter = null;
 			String className = arg0.getAdapter().getClass().getName();
-			if(className.indexOf("HeaderViewListAdapter")<0){
+			if (className.indexOf("HeaderViewListAdapter") < 0) {
 				adapter = (SimpleDataAdapter) arg0.getAdapter();
-			}else{
-				HeaderViewListAdapter hAdapter = (HeaderViewListAdapter) arg0.getAdapter();
+			} else {
+				HeaderViewListAdapter hAdapter = (HeaderViewListAdapter) arg0
+						.getAdapter();
 				adapter = (SimpleDataAdapter) hAdapter.getWrappedAdapter();
 			}
 			List<SimpleData> playList = adapter.getData();
-			
-//			Log.e("play info", "url="+arg1.getTag(R.string.item_mp3_url));
-//			Log.e("play list id",arg0.getTag(R.string.play_list_id)+"");
-//			Log.e("play list type", ""+arg0.getTag(R.string.play_list_type)+"");
+
+			// Log.e("play info", "url="+arg1.getTag(R.string.item_mp3_url));
+			// Log.e("play list id",arg0.getTag(R.string.play_list_id)+"");
+			// Log.e("play list type",
+			// ""+arg0.getTag(R.string.play_list_type)+"");
 			Intent playIntent = new Intent(MusicBrowse.this, MusicPlay.class);
 			Bundle bundle = new Bundle();
-			
-			bundle.putSerializable("playList", (ArrayList<SimpleData>)playList);
+
+			bundle.putSerializable("playList", (ArrayList<SimpleData>) playList);
 			bundle.putInt("selectedIndex", arg2);
-			bundle.putString("playListId", arg0.getTag(R.string.play_list_id)+"");
-			
+			bundle.putString("playListId", arg0.getTag(R.string.play_list_id)
+					+ "");
+
 			playIntent.putExtras(bundle);
-			
+
 			startActivity(playIntent);
-			
+
 		}
 
 	};
@@ -528,18 +551,19 @@ public class MusicBrowse extends Activity {
 			ListView lv = (ListView) vStatus.views.get(mViewPager
 					.getCurrentItem());
 			// use hint
-			
-			//setHintView(pb);
+
+			// setHintView(pb);
 			lv.addFooterView(loadingProgress);
 			lv.setAdapter(null);
 			super.onPreExecute();
 
 		}
-		/*@params url,vStatus.views.get(mViewPager.getCurrentItem()),arg1.getTag(R.string.item_id),type
-		 *目标url,listview容器，wiki_id,wiki_type
-		 * 
-		 * 
-		 * */
+
+		/*
+		 * @params
+		 * url,vStatus.views.get(mViewPager.getCurrentItem()),arg1.getTag
+		 * (R.string.item_id),type目标url,listview容器，wiki_id,wiki_type
+		 */
 		@Override
 		protected Object[] doInBackground(Object... params) {
 			// TODO Auto-generated method stub
@@ -550,7 +574,8 @@ public class MusicBrowse extends Activity {
 
 			ListAdapter adapter = new SimpleDataAdapter(MusicBrowse.this, l);
 
-			Object[] res = new Object[] { params[1], adapter, url_more,params[2] ,params[3]};
+			Object[] res = new Object[] { params[1], adapter, url_more,
+					params[2], params[3] };
 			return res;
 		}
 
@@ -561,27 +586,27 @@ public class MusicBrowse extends Activity {
 
 			ListView listView = (ListView) result[0];
 			ListAdapter adapter = (ListAdapter) result[1];
-			
+
 			listView.removeFooterView(loadingProgress);
-			//clearHintView();
-			listView.setTag(R.string.play_list_id,result[3]);
-			listView.setTag(R.string.play_list_type,result[4]);
+			// clearHintView();
+			listView.setTag(R.string.play_list_id, result[3]);
+			listView.setTag(R.string.play_list_type, result[4]);
 			listView.setOnItemClickListener(onSubClick);
 			if (result[2] != null) {
 				listView.addFooterView(loadMoreBtn);
 				loadMoreBtn.setTag(R.string.more_btn_url, result[2]);
-				
-				//Log.e("!!!!", "!!!!!!");
-//				TextView tv = (TextView) inflater.inflate(
-//						R.layout.big_text_item, null);
-//				tv.setText("加载更多");
-//				tv.setOnClickListener(onLoadMoreBtnClick);
-//				tv.setTag(R.string.more_btn_url, result[2]);
-				
-				//setHintView(tv);
+
+				// Log.e("!!!!", "!!!!!!");
+				// TextView tv = (TextView) inflater.inflate(
+				// R.layout.big_text_item, null);
+				// tv.setText("加载更多");
+				// tv.setOnClickListener(onLoadMoreBtnClick);
+				// tv.setTag(R.string.more_btn_url, result[2]);
+
+				// setHintView(tv);
 			}
 			listView.setAdapter(adapter);
-			
+
 		}
 
 	}
@@ -592,12 +617,13 @@ public class MusicBrowse extends Activity {
 			ListView lv = (ListView) vStatus.views.get(mViewPager
 					.getCurrentItem());
 			// use hint
-			
-			//setHintView(pb);
+
+			// setHintView(pb);
 			lv.addFooterView(loadingProgress);
 			lv.setAdapter(null);
 			super.onPreExecute();
 		}
+
 		@Override
 		protected Object[] doInBackground(String... params) {
 			// TODO Auto-generated method stub
@@ -627,14 +653,14 @@ public class MusicBrowse extends Activity {
 				listView.setOnItemClickListener(onSubClick);
 			}
 			listView.setTag(result[2]);
-			//clearHintView();
+			// clearHintView();
 			if (result[3] != null) {
 				TextView tv = (TextView) inflater.inflate(
 						R.layout.big_text_item, null);
 				tv.setText("加载更多");
 				tv.setOnClickListener(onLoadMoreBtnClick);
 
-				//setHintView(tv);
+				// setHintView(tv);
 
 			}
 
@@ -642,7 +668,8 @@ public class MusicBrowse extends Activity {
 
 	}
 
-	public class LoadMoreTaskPlayable extends AsyncTask<Object, Integer, Object[]> {
+	public class LoadMoreTaskPlayable extends
+			AsyncTask<Object, Integer, Object[]> {
 
 		@Override
 		protected Object[] doInBackground(Object... params) {
@@ -657,10 +684,11 @@ public class MusicBrowse extends Activity {
 		protected void onPostExecute(Object[] result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
-			//clearHintView();
-			HeaderViewListAdapter hAdapter = (HeaderViewListAdapter)vStatus.views.get(
-					mViewPager.getCurrentItem()).getAdapter();
-			SimpleDataAdapter adapter = (SimpleDataAdapter) hAdapter.getWrappedAdapter();
+			// clearHintView();
+			HeaderViewListAdapter hAdapter = (HeaderViewListAdapter) vStatus.views
+					.get(mViewPager.getCurrentItem()).getAdapter();
+			SimpleDataAdapter adapter = (SimpleDataAdapter) hAdapter
+					.getWrappedAdapter();
 			adapter.getData().addAll((List<SimpleData>) result[0]);
 			adapter.notifyDataSetChanged();
 			Log.e("next url", result[1] + "");
@@ -670,11 +698,13 @@ public class MusicBrowse extends Activity {
 				tv.setText("加载更多");
 				tv.setOnClickListener(onLoadMoreBtnClick);
 				loadMoreBtn.setTag(R.string.more_btn_url, result[1]);
-				//setHintView(tv);
-			}else{
-				vStatus.views.get(mViewPager.getCurrentItem()).removeFooterView(loadMoreBtn);
+				// setHintView(tv);
+			} else {
+				vStatus.views.get(mViewPager.getCurrentItem())
+						.removeFooterView(loadMoreBtn);
 			}
-			loadMoreBtn.findViewById(R.id.load_more_progress).setVisibility(View.GONE);
+			loadMoreBtn.findViewById(R.id.load_more_progress).setVisibility(
+					View.GONE);
 		}
 
 	}
@@ -682,17 +712,17 @@ public class MusicBrowse extends Activity {
 	private OnClickListener onLoadMoreBtnClick = new OnClickListener() {
 
 		public void onClick(View v) {
-//			clearHintView();
-//			ProgressBar pb = (ProgressBar) inflater.inflate(
-//					R.layout.progress_view, null);
-//			setHintView(pb);
+			// clearHintView();
+			// ProgressBar pb = (ProgressBar) inflater.inflate(
+			// R.layout.progress_view, null);
+			// setHintView(pb);
 			// SimpleDataAdapter adapter =
 			// (SimpleDataAdapter)vStatus.views.get(mViewPager.getCurrentItem()).getAdapter();
 			v.findViewById(R.id.load_more_progress).setVisibility(View.VISIBLE);
 			String url = (String) v.getTag(R.string.more_btn_url);
 			LoadMoreTaskPlayable task = new LoadMoreTaskPlayable();
 			task.execute(url);
-			
+
 		}
 	};
 	private Handler mMessageHandler = new Handler() {

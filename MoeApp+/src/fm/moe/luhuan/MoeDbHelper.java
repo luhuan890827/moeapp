@@ -18,8 +18,8 @@ public class MoeDbHelper extends SQLiteOpenHelper {
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		// TODO Auto-generated method stub
-		db.execSQL("create table "
-				+ TABLE_NAME +" if not exist"
+		db.execSQL("create table "+" if not exists "
+				+ TABLE_NAME 
 				+ " (_id INTEGER  not null primary key"
 				+ ",title text not null"
 				+ ",artist text,media_path text not null"

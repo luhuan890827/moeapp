@@ -26,7 +26,7 @@
         android:layout_height="60dp"
         android:layout_weight="1"
         android:background="@drawable/stateful_btn"
-        android:src="@android:drawable/ic_media_pause" />
+        android:src="@android:drawable/ic_media_play" />
 
     <ImageButton
         android:id="@+id/ib_next"

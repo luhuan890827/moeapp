@@ -29,7 +29,7 @@ import android.widget.Toast;
 
 public class AppInit extends Activity {
 	private WebView wv;
-	private MoeHttp oauth = new MoeHttp();
+	private MoeHttp oauth;
 	private ImageView logo;
 	SharedPreferences pref;
 	String authUrl;
@@ -42,6 +42,7 @@ public class AppInit extends Activity {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		// getActionBar().hide();
 		setContentView(R.layout.app_init);
+		oauth = new MoeHttp(this);
 		logo = (ImageView) findViewById(R.id.init_logo);
 		wv = (WebView) findViewById(R.id.oauth_wv);
 		mainLayout = (RelativeLayout) findViewById(R.id.oauth_main);
