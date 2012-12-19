@@ -1,5 +1,7 @@
 package fm.moe.luhuan.activities;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +28,8 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Bitmap.CompressFormat;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -48,10 +52,9 @@ public class MusicPlay extends Activity {
 	public static final String ACTION_RESUME = "resume playactivity";
 	private MoeHttp moeHttp;
 	private CommonHttpHelper commonHttp;
-	private MoeDbHelper dbHelper;
 	private Texts texts = new Texts();
 	private Buttons buttons = new Buttons();
-
+	
 	private ImageView albumCover;
 	// private ArrayList<SimpleData> playList;
 	// private String playListId;
@@ -67,7 +70,7 @@ public class MusicPlay extends Activity {
 	private LocalBroadcastManager broadcastManager;
 	private boolean isPlayerPrepared = false;
 	private IntentFilter intentFilter = new IntentFilter();
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
@@ -82,7 +85,7 @@ public class MusicPlay extends Activity {
 		intentFilter.addAction(PlayService.ACTION_PLAYER_ERR);
 		intentFilter.addAction(PlayService.ACTION_PLAYER_COMPLETION);
 		intentFilter.addAction(DownloadService.ACTION_NET_CONN_PROBLEM);
-		intentFilter.addAction(ACTION_RESUME);
+
 		texts.bindView();
 		buttons.bindView();
 		albumCover = (ImageView) findViewById(R.id.big_cover);
@@ -95,25 +98,23 @@ public class MusicPlay extends Activity {
 		commonHttp = new CommonHttpHelper();
 		fileHelper = new FileStorageHelper(getApplicationContext());
 		SharedPreferences pref = getSharedPreferences("token", MODE_PRIVATE);
-		// 若token未设置成功（例如access_token为空）,则进行httprequest时将直接返回NULL
-
-		dbHelper = new MoeDbHelper(this);
+		
 
 		Intent intent = getIntent();
-		
+
 		Bundle bundle = intent.getExtras();
-		if(bundle!=null){
+		if (bundle != null) {
 			List<SimpleData> playList = (ArrayList<SimpleData>) bundle
 					.get(PlayService.BUNDLE_KEY_PLAYLIST);
 			int nowIndex = (Integer) bundle
 					.get(PlayService.BUNDLE_KEY_SELECTED_INDEX);
-			currentItem = playList.get(nowIndex);
 
 			Intent serviceIntent = new Intent(this, PlayService.class);
 			serviceIntent.putExtras(bundle);
 			serviceIntent.setAction(PLAY_ACT_CREATE);
 
-			// shoud figure the logic partition between bindService and startService
+			// shoud figure the logic partition between bindService and
+			// startService
 			// in my opinion,call bindService only to get the instance of the
 			// service,
 			// call startService to actually start your task
@@ -122,9 +123,9 @@ public class MusicPlay extends Activity {
 			// onstartcommand()
 			// // won't be called
 			startService(serviceIntent);
-			setStaticView();
+
 		}
-		
+
 	}
 
 	@Override
@@ -133,8 +134,8 @@ public class MusicPlay extends Activity {
 		super.onResume();
 		Intent bindIntent = new Intent(this, PlayService.class);
 		bindService(bindIntent, conn, BIND_AUTO_CREATE);
-
 		broadcastManager.registerReceiver(broadcastReceiver, intentFilter);
+
 		// registerReceiver(new BroadcastReceiver() {
 		//
 		// @Override
@@ -151,6 +152,39 @@ public class MusicPlay extends Activity {
 		super.onStop();
 		broadcastManager.unregisterReceiver(broadcastReceiver);
 		unbindService(conn);
+	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+		// ByteArrayOutputStream byteArrOutput = new ByteArrayOutputStream();
+		// albumCover.getDrawingCache(false).compress(CompressFormat.JPEG, 100,
+		// byteArrOutput);
+		// outState.putByteArray("cover", byteArrOutput.toByteArray());
+		// outState.putString("title", texts.title.getText().toString());
+		// outState.putString("artist", texts.artist.getText().toString());
+		// outState.putString("album", texts.album.getText().toString());
+		// try {
+		// byteArrOutput.close();
+		// } catch (IOException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+
+	}
+
+	@Override
+	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+		// TODO Auto-generated method stub
+		super.onRestoreInstanceState(savedInstanceState);
+		// byte[] bmData = savedInstanceState.getByteArray("cover");
+		// albumCover.setImageBitmap(BitmapFactory.decodeByteArray(bmData, 0,
+		// bmData.length));
+		// texts.title.setText(savedInstanceState.getString("title"));
+		// texts.artist.setText(savedInstanceState.getString("artist"));
+		// texts.album.setText(savedInstanceState.getString("album"));
+
 	}
 
 	private void setStaticView() {
@@ -185,10 +219,12 @@ public class MusicPlay extends Activity {
 				@Override
 				protected Bitmap doInBackground(Object... params) {
 					// TODO Auto-generated method stub
-					Bitmap bm = null;
+					Bitmap bm = musicService.fileHelper.getItemCoverBitmap(currentItem);
 					// Log.e("loading bitmap", albumnCoverUrl);
-
-					bm = commonHttp.getBitmap(albumnCoverUrl);
+					if (bm == null) {
+						bm = commonHttp.getBitmap(albumnCoverUrl);
+						
+					}
 
 					imageCache.put(currentItem.getId(), bm);
 					return bm;
@@ -269,6 +305,8 @@ public class MusicPlay extends Activity {
 			// TODO Auto-generated method stub
 			onbind = true;
 			musicService = ((PlayerBinder) service).getService();
+			currentItem = musicService.playList.get(musicService.nowIndex);
+			setStaticView();
 
 		}
 	};
@@ -280,10 +318,9 @@ public class MusicPlay extends Activity {
 			case R.id.song_save:
 				Intent downloadIntent = new Intent(getApplicationContext(),
 						DownloadService.class);
-				downloadIntent.putExtra(DownloadService.DOWNLOAD_URL_KEY,
-						currentItem.getMp3Url());
-				downloadIntent.putExtra(DownloadService.ITEM_ID_KEY,
-						currentItem.getId() + "");
+				downloadIntent.putExtra(DownloadService.EXTRA_SONG_ITEM,
+						currentItem);
+
 				startService(downloadIntent);
 				break;
 			case R.id.ib_pp:
@@ -323,9 +360,6 @@ public class MusicPlay extends Activity {
 						MusicPlay.this,
 						intent.getStringExtra(DownloadService.EXTRA_CONN_PROBLEM_INFO),
 						Toast.LENGTH_SHORT).show();
-			}
-			if(action.equals(ACTION_RESUME)){
-				onResume();
 			}
 
 		}

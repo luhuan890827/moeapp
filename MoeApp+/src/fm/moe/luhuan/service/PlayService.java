@@ -1,9 +1,11 @@
 package fm.moe.luhuan.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import fm.moe.luhuan.FileStorageHelper;
 import fm.moe.luhuan.activities.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
 
@@ -39,18 +41,20 @@ public class PlayService extends Service {
 
 	private LocalBroadcastManager broadcastManager;
 	private Intent broadcast = new Intent();
-	public MediaPlayer player = new MediaPlayer();
+	
 
 	private PlayerBinder binder = new PlayerBinder();
 
 	public ArrayList<SimpleData> playList;
 	public String playListId;
 	public int nowIndex = -1;
-
+	public MediaPlayer player = new MediaPlayer();
+	public FileStorageHelper fileHelper;
 	@Override
 	public void onCreate() {
 		// TODO Auto-generated method stub
 		super.onCreate();
+		fileHelper = new FileStorageHelper(this);
 		player.setOnBufferingUpdateListener(onSongBuffering);
 		player.setOnErrorListener(onPlayerErr);
 		player.setOnPreparedListener(onPlayerPrepared);
@@ -102,12 +106,15 @@ public class PlayService extends Service {
 	
 	private void playSongAtIndex(int n) {
 		// TODO Auto-generated method stub
-		String url = playList.get(nowIndex).getMp3Url();
-		Uri uri = Uri.parse(url);
+		player.reset();
+		
+		String url =fileHelper.getItemMp3Url(playList.get(n));
+		
+		//Uri uri = Uri.parse(url);
 		// why block here????
 		try {
 			
-			player.setDataSource(getApplicationContext(),uri);
+			player.setDataSource(url);
 		} catch (Exception e) {
 			Log.e("setDataSource err", "", e);
 		}
