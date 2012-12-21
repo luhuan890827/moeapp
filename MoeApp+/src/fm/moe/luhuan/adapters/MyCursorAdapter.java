@@ -20,7 +20,6 @@ public class MyCursorAdapter extends CursorAdapter{
 		inflater = LayoutInflater.from(context);
 		
 	}
-
 	@Override
 	public View newView(Context context, Cursor cursor,
 			ViewGroup parent) {
@@ -29,10 +28,14 @@ public class MyCursorAdapter extends CursorAdapter{
 				R.layout.simple_list_item, null);
 		TextView title = (TextView) ll
 				.findViewById(R.id.item_title);
-		TextView artist = (TextView) ll
+		TextView description = (TextView) ll
 				.findViewById(R.id.item_description);
 		title.setText(cursor.getString(1));
-		artist.setText(cursor.getString(2));
+		String desText = cursor.getString(2);
+		if(desText==null||desText.equals("")){
+			desText="未知艺术家";
+		}
+		description.setText(cursor.getString(2));
 		return ll;
 		
 	}
@@ -43,12 +46,13 @@ public class MyCursorAdapter extends CursorAdapter{
 		LinearLayout ll = (LinearLayout) view;
 		TextView title = (TextView) ll
 				.findViewById(R.id.item_title);
-		TextView artist = (TextView) ll
+		TextView description = (TextView) ll
 				.findViewById(R.id.item_description);
 		title.setText(cursor.getString(1));
-		artist.setText(cursor.getString(2));
-		
-
+		String desText = cursor.getString(2);
+		if(desText==null||desText.equals("")){
+			desText="未知艺术家";
+		}
+		description.setText(desText);
 	}
-
 }

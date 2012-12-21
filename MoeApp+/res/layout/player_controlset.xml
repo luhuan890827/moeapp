@@ -49,24 +49,25 @@
             android:layout_alignParentLeft="true"
             android:layout_centerVertical="true"
             android:minWidth="35dp"
-            android:text="--:--" />
+            android:text="00:00" />
 
         <SeekBar
+            android:max="100"
             android:id="@+id/playing_seekbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-           	android:layout_toLeftOf="@+id/time_remain"
+           	android:layout_toLeftOf="@+id/time_full"
            		android:layout_toRightOf="@+id/time_played"
             android:layout_centerInParent="true" />
 
         <TextView
-            android:id="@+id/time_remain"
+            android:id="@+id/time_full"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:minWidth="35dp"
-            android:text="--:--" />
+            android:text="00:00" />
     </RelativeLayout>
 
 </RelativeLayout>

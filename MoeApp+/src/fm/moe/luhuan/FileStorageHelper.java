@@ -57,6 +57,11 @@ public class FileStorageHelper {
 		}
 		return url;
 	}
+	public boolean isItemSaved(SimpleData item){
+		SQLiteDatabase db = dbHelper.getWritableDatabase();
+		Cursor c = db.rawQuery("select media_path from "+MoeDbHelper.TABLE_NAME+" where _id="+item.getId(), null);
+		return c.getCount()>0;
+	}
 	public void insertItemIntoDb(SimpleData item){
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 
@@ -67,6 +72,9 @@ public class FileStorageHelper {
 		values.put("media_path", songDir.getAbsolutePath()+"/"+item.getId()+".mp3");
 		values.put("cover_path", coverDir.getAbsolutePath()+"/"+item.getParentId()+".jpg");
 		values.put("insert_time", (new Date()).getTime());
+		values.put("parent_id", item.getParentId());
+		values.put("parent_title", item.getParentTitle());
+		values.put("is_fav", item.isFav());
 		db.insert(MoeDbHelper.TABLE_NAME, null, values);
 		db.close();
 	}

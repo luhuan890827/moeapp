@@ -20,11 +20,15 @@ public class MoeDbHelper extends SQLiteOpenHelper {
 		// TODO Auto-generated method stub
 		db.execSQL("create table "+" if not exists "
 				+ TABLE_NAME 
-				+ " (_id INTEGER  not null primary key"
-				+ ",title text not null"
-				+ ",artist text,media_path text not null"
-				+ ",cover_path text not null"
-				+ ",insert_time int not null"
+				+ " (_id INTEGER  not null primary key"//0
+				+ ",title text not null"//1
+				+ ",artist text" //2
+				+ ",parent_id integer not null"//3
+				+ ",parent_title text not null"//4
+				+ ",is_fav boolean"//5
+				+ ",media_path text not null"//6
+				+ ",cover_path text not null"//7
+				+ ",insert_time int not null"//8
 				+");");
 
 	}

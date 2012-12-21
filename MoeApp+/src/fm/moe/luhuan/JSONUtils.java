@@ -50,7 +50,14 @@ public class JSONUtils {
 		data.setDescription(wikiData.getDescription());
 		data.setParentId(wikiData.getId());
 		data.setAlbumnCoverUrl(wikiData.getAlbumnCoverUrl());
-		data.setParentTitle(wikiData.getParentTitle());
+		data.setParentTitle(wikiData.getTitle());
+		
+		JSONObject subUpload = obj.getJSONArray("sub_upload").getJSONObject(0);
+		if(subUpload!=null){
+			data.setMp3Url(subUpload.getString("up_url"));
+		}
+		
+		//data.setMp3Url(obj.getJSONObject("sub_upload").getString("up_url"));
 		//data.setArtist(info);
 		return data;
 
@@ -67,16 +74,6 @@ public class JSONUtils {
 		return l;
 	}
 
-//	public static List<SimpleData> getSubsList(String json, String description) {
-//		List<SimpleData> l = new ArrayList<SimpleData>();
-//		JSONArray arr = JSON.parseObject(json).getJSONObject("response")
-//				.getJSONArray("subs");
-//		for (int i = 0; i < arr.size(); i++) {
-//			SimpleData data = getSub(arr.getJSONObject(i), description,false);
-//			l.add(data);
-//		}
-//		return l;
-//	}
 
 	public static List<SimpleData> getFavs(String json, String type) {
 		List<SimpleData> l = new ArrayList<SimpleData>();

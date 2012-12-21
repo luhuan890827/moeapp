@@ -68,8 +68,8 @@ public final class R {
         public static final int song_share=0x7f080022;
         public static final int start_moe=0x7f080005;
         public static final int tab_strip=0x7f08000e;
+        public static final int time_full=0x7f08001d;
         public static final int time_played=0x7f08001b;
-        public static final int time_remain=0x7f08001d;
         public static final int view_pager=0x7f08000c;
         public static final int wrapped_list=0x7f080007;
     }

@@ -35,8 +35,7 @@ public class MoeHttp {
 	private Token token;
 	private final String CONSUMER_KEY = "420f4049d93b1c64f5e811187ad3364c05016179a";
 	private final String CONSUMER_SECRET = "8191c1951ee62331d84944743ddc3ca0";
-	
-	private static HttpClient httpClient = new DefaultHttpClient();
+
 
 	public MoeHttp(Context c) {
 		oService = new ServiceBuilder().provider(MoeOauthAPI.class)
@@ -68,6 +67,7 @@ public class MoeHttp {
 		if (token != null && !token.isEmpty()) {
 			OAuthRequest req = new OAuthRequest(Verb.GET, url);
 			req.setConnectTimeout(3000, TimeUnit.MILLISECONDS);
+			req.setReadTimeout(4000, TimeUnit.MILLISECONDS);
 			oService.signRequest(token, req);
 			Response resp = req.send();
 			return resp.getBody();
@@ -77,27 +77,6 @@ public class MoeHttp {
 		}
 	}
 
-//	public Bitmap getBitmap(String url) throws ClientProtocolException,
-//			IOException {
-//
-//		HttpGet request = new HttpGet(url);
-//		HttpResponse response = httpClient.execute(request);
-//		HttpEntity entity = response.getEntity();
-//		InputStream inStream = entity.getContent();
-//		ArrayList<Integer> data = new ArrayList<Integer>();
-//		int b = 0;
-//		while ((b = inStream.read()) > -1) {
-//			data.add(b);
-//		}
-//		byte[] dataByte = new byte[data.size()];
-//		for (int i = 0; i < data.size(); i++) {
-//			dataByte[i] = (byte) data.get(i).intValue();
-//		}
-//		Bitmap bm = BitmapFactory.decodeByteArray(dataByte, 0, dataByte.length);
-//		inStream.close();
-//
-//		return bm;
-//
-//	}
+
 
 }
