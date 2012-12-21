@@ -26,9 +26,10 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 public class PlayService extends Service {
-	public static final String BUNDLE_KEY_PLAYLIST = "playList";
-	public static final String BUNDLE_KEY_PLAYLIST_ID = "playListId";
-	public static final String BUNDLE_KEY_SELECTED_INDEX = "selectedIndex";
+	public static final String EXTRA_IF_NEED_NETWORK = "need network";
+	public static final String EXTRA_PLAYLIST = "playList";
+	public static final String EXTRA_PLAYLIST_ID = "playListId";
+	public static final String EXTRA_SELECTED_INDEX = "selectedIndex";
 	public static final String ACTION_PLAYER_STATE_CHANGE = "player state change";
 	// 1 for prepaed,0 for complete,-1 for err,2 for bufferedUpdate
 	public static final String EXTRA_PLAYER_STATE = "player state";
@@ -61,8 +62,7 @@ public class PlayService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		// TODO Auto-generated method stub
-		Log.e("service", "onstartcommand");
-		// Log.e("service", "onstartcommand action="+intent.getAction());
+		//Log.e("service", "onstartcommand");
 		if (intent != null
 				&& intent.getAction().equals(MusicPlay.PLAY_ACT_CREATE)) {
 
@@ -89,9 +89,9 @@ public class PlayService extends Service {
 
 	private void onPlayerInit(Intent intent) {
 		Bundle bundle = intent.getExtras();
-		playList = (ArrayList<SimpleData>) bundle.get(BUNDLE_KEY_PLAYLIST);
-		nowIndex = (Integer) bundle.get(BUNDLE_KEY_SELECTED_INDEX);
-		playListId = (String) bundle.get(BUNDLE_KEY_PLAYLIST_ID);
+		playList = (ArrayList<SimpleData>) bundle.get(EXTRA_PLAYLIST);
+		nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
+		playListId = (String) bundle.get(EXTRA_PLAYLIST_ID);
 		playSongAtIndex(nowIndex);
 
 	}
@@ -187,6 +187,7 @@ public class PlayService extends Service {
 			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
 			broadcast.putExtra(EXTRA_PLAYER_STATE, 1);
 			broadcastManager.sendBroadcast(broadcast);
+			notificationManager.cancel(1);
 			// Log.e("broadcast", "send");
 
 		}

@@ -13,6 +13,7 @@ import fm.moe.luhuan.adapters.MyViewPagerAdapter;
 import fm.moe.luhuan.adapters.SimpleDataAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.MoeHttp;
+import fm.moe.luhuan.service.PlayService;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
@@ -28,6 +29,7 @@ import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -47,15 +49,17 @@ public class MusicBrowse extends Activity {
 	private LinearLayout loadingProgress;
 	private MoeHttp http;
 	private ConnectivityManager connectivityManager;
-
+	private SQLiteDatabase db;
+	
 	// private Object lock = new Object();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
-
+		//requestWindowFeature(Window.FEATURE_NO_TITLE);
+		//setTheme(android.R.style.Theme_Holo);
 		super.onCreate(savedInstanceState);
-		setTheme(android.R.style.Theme_Holo);
+		
 		setContentView(R.layout.music_browse);
 		inflater = LayoutInflater.from(this);
 		loadingProgress = (LinearLayout) inflater.inflate(
@@ -88,7 +92,29 @@ public class MusicBrowse extends Activity {
 		// },intentFilter );
 
 	}
-
+	@Override
+	protected void onStop() {
+		// TODO Auto-generated method stub
+		super.onStop();
+		db.close();
+	}
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+		
+		if(!db.isOpen()){
+			MoeDbHelper dbHelper = new MoeDbHelper(this);
+			db = dbHelper.getWritableDatabase();
+			CursorAdapter adapter = (CursorAdapter) vStatus.views.get(2).getAdapter();
+			adapter.changeCursor(db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME,
+					null));
+			 
+			((CursorAdapter)vStatus.views.get(2).getAdapter()).notifyDataSetChanged();
+		}
+		
+		
+	}
 	@Override
 	public void onBackPressed() {
 		// TODO Auto-generated method stub
@@ -168,15 +194,15 @@ public class MusicBrowse extends Activity {
 		vStatus.views.add(listView);
 
 		MoeDbHelper dbHelper = new MoeDbHelper(this);
-		SQLiteDatabase db = dbHelper.getWritableDatabase();
+		db = dbHelper.getWritableDatabase();
 
-		Cursor c = db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME,
+		 Cursor cursor = db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME,
 				null);
 
-		ListAdapter adapter = new MyCursorAdapter(getApplicationContext(), c,
+		ListAdapter adapter = new MyCursorAdapter(getApplicationContext(), cursor,
 				false);
 		// 使用cursoradapter勿调用cursor.close();
-
+		
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(onLocalItemClick);
 		return ll;
@@ -468,13 +494,13 @@ public class MusicBrowse extends Activity {
 			Intent playIntent = new Intent(MusicBrowse.this, MusicPlay.class);
 			Bundle bundle = new Bundle();
 
-			bundle.putSerializable("playList", (ArrayList<SimpleData>) playList);
-			bundle.putInt("selectedIndex", arg2);
-			bundle.putString("playListId", arg0.getTag(R.string.play_list_id)
+			bundle.putSerializable(PlayService.EXTRA_PLAYLIST, (ArrayList<SimpleData>) playList);
+			bundle.putInt(PlayService.EXTRA_SELECTED_INDEX, arg2);
+			bundle.putString(PlayService.EXTRA_PLAYLIST_ID, arg0.getTag(R.string.play_list_id)
 					+ "");
-
+			bundle.putBoolean(PlayService.EXTRA_IF_NEED_NETWORK, true);
 			playIntent.putExtras(bundle);
-
+			
 			startActivity(playIntent);
 
 		}

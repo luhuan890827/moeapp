@@ -4,9 +4,9 @@ package fm.moe.luhuan.activities;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-import java.util.HashMap;
+
 import java.util.List;
-import java.util.Map;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -18,17 +18,22 @@ import fm.moe.luhuan.service.DownloadService;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.service.PlayService.PlayerBinder;
 
+import android.annotation.TargetApi;
+import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 
 import android.graphics.Bitmap;
 
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -36,6 +41,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.util.LruCache;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup.LayoutParams;
@@ -48,7 +54,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class MusicPlay extends Activity {
-
+	
 	public static final String PLAY_ACT_CREATE = "play act create";
 	public static final String ACTION_RESUME = "resume playactivity";
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("mm:ss");
@@ -62,6 +68,7 @@ public class MusicPlay extends Activity {
 			15);
 	private LocalBroadcastManager broadcastManager;;
 	private IntentFilter intentFilter = new IntentFilter();
+	private SharedPreferences pref;
 	//widgets
 	private Texts texts = new Texts();
 	private Buttons buttons = new Buttons();
@@ -75,7 +82,7 @@ public class MusicPlay extends Activity {
 		broadcastManager = LocalBroadcastManager
 				.getInstance(getApplicationContext());
 
-		
+		setBackTab();
 		moeHttp = new MoeHttp(this);
 
 		Intent intent = getIntent();
@@ -84,10 +91,14 @@ public class MusicPlay extends Activity {
 		if (bundle != null) {
 			
 			List<SimpleData> playList = (ArrayList<SimpleData>) bundle
-					.get(PlayService.BUNDLE_KEY_PLAYLIST);
+					.get(PlayService.EXTRA_PLAYLIST);
+			if(bundle.getBoolean(PlayService.EXTRA_IF_NEED_NETWORK)&&getSharedPreferences("App_settings", MODE_PRIVATE)
+					.getBoolean(getResources().getString(fm.moe.luhuan.R.string.pref_key_play_only_on_wifi), false)){
+				//to do
+			}
 			int nowIndex = (Integer) bundle
-					.get(PlayService.BUNDLE_KEY_SELECTED_INDEX);
-
+					.get(PlayService.EXTRA_SELECTED_INDEX);
+			
 			Intent serviceIntent = new Intent(this, PlayService.class);
 			serviceIntent.putExtras(bundle);
 			serviceIntent.setAction(PLAY_ACT_CREATE);
@@ -112,6 +123,27 @@ public class MusicPlay extends Activity {
 		broadcastManager.unregisterReceiver(broadcastReceiver);
 		mHandler.removeCallbacks(refreshPlayedTimeRunnable);
 		unbindService(conn);
+	}
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case android.R.id.home:
+			Intent backHomeIntent = new Intent(this, MusicBrowse.class);
+			backHomeIntent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			startActivity(backHomeIntent);
+			break;
+
+		default:
+			break;
+		}
+		
+		return super.onOptionsItemSelected(item);
+	}
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private void setBackTab(){
+		ActionBar actionBar = getActionBar();
+	    actionBar.setDisplayHomeAsUpEnabled(true);
+		
 	}
 	private void initViews(){
 		intentFilter.addAction(PlayService.ACTION_PLAYER_STATE_CHANGE);
@@ -388,7 +420,10 @@ public class MusicPlay extends Activity {
 			case 1:// for completion
 				setStaticView();
 				mHandler.removeCallbacks(refreshPlayedTimeRunnable);
-				mHandler.post(resetTimeinfoRunnable);
+				if(!(musicService.playList.size()-1==musicService.nowIndex)){
+					mHandler.post(resetTimeinfoRunnable);
+				}
+				
 				break;
 			case 2:// for buffer update
 				seekBar.setSecondaryProgress(intent.getIntExtra(

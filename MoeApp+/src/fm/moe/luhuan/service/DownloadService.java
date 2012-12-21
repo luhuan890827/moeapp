@@ -61,7 +61,6 @@ public class DownloadService extends IntentService {
 	private FileStorageHelper fileHelper;
 
 	private ConnectivityManager connectivityManager;
-	public static final String PREF_KEY_DOWNLOAD_JUST_ON_WIFI = "just on wifi";
 
 	public static final String EXTRA_SONG_ITEM = "a item";
 	public static final String EXTRA_CONN_PROBLEM_INFO = "network problem info";
@@ -74,16 +73,15 @@ public class DownloadService extends IntentService {
 
 	@Override
 	public void onCreate() {
-		// TODO Auto-generated method stub
 		super.onCreate();
 		fileHelper = new FileStorageHelper(this);
 
 		initNotification();
+		//to be change
 		onlyByWifi = getSharedPreferences("App_settings", MODE_PRIVATE)
-				.getBoolean(PREF_KEY_DOWNLOAD_JUST_ON_WIFI, false);
+				.getBoolean(getResources().getString(fm.moe.luhuan.R.string.pref_key_download_only_on_wifi), false);
 
 		connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-		// accept the broadcast about the net connection,wifi and connectivity
 		IntentFilter intentFilter = new IntentFilter();
 
 		intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
