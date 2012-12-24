@@ -61,7 +61,7 @@ public class DownloadService extends IntentService {
 	private FileStorageHelper fileHelper;
 
 	private ConnectivityManager connectivityManager;
-
+	public static final int NOTIFICATION_ID = 0;
 	public static final String EXTRA_SONG_ITEM = "a item";
 	public static final String EXTRA_CONN_PROBLEM_INFO = "network problem info";
 	// 0 for downloading,1 for complete,-1 for err
@@ -102,16 +102,16 @@ public class DownloadService extends IntentService {
 			Bundle bundle = new Bundle();
 			bundle.putInt(EXTRA_DOWNLOAD_STATE, 0);
 			sendBroadcast(ACTION_DOWNLOAD_STATE_CHANGE, bundle);
-			sendNotification(R.drawable.stat_sys_download, "正在下载...",
-					item.getTitle() + "-" + item.getArtist(), 0);
+			sendNotification(R.drawable.stat_sys_download,"正在下载", "正在下载...",
+					item.getTitle() + "-" + item.getArtist());
 			
 		} else {
 			Bundle bundle = new Bundle();
 			bundle.putString(EXTRA_CONN_PROBLEM_INFO, connInfo);
 			bundle.putInt(EXTRA_DOWNLOAD_STATE, -1);
 			sendBroadcast(ACTION_DOWNLOAD_STATE_CHANGE, bundle);
-			sendNotification(R.drawable.stat_notify_error, "下载已暂停",
-					getConnProblemText() + ",请检查你的网络", 0);
+			sendNotification(R.drawable.stat_notify_error,"下载已暂停", "下载已暂停",
+					getConnProblemText() + ",请检查你的网络");
 			return;
 
 		}
@@ -134,8 +134,8 @@ public class DownloadService extends IntentService {
 				bundle.putInt(EXTRA_DOWNLOAD_STATE, -1);
 				bundle.putString(EXTRA_CONN_PROBLEM_INFO, tempConnInfo);
 				sendBroadcast(ACTION_DOWNLOAD_STATE_CHANGE, bundle);
-				sendNotification(R.drawable.stat_notify_error, "下载已暂停",
-						tempConnInfo + ",请检查你的网络", 0);
+				sendNotification(R.drawable.stat_notify_error, "下载已暂停","下载已暂停",
+						tempConnInfo + ",请检查你的网络");
 				return;
 			}
 				//consider custom the view of the notification to show the download progress
@@ -169,8 +169,8 @@ public class DownloadService extends IntentService {
 			fileHelper.saveCover(item, bm);
 		}
 		
-		sendNotification(R.drawable.stat_sys_download_done, "下载完毕！",
-				item.getTitle() + "-" + item.getArtist(), 0);
+		sendNotification(R.drawable.stat_sys_download_done,"下载已暂停", "下载完毕！",
+				item.getTitle() + "-" + item.getArtist());
 		fileHelper.insertItemIntoDb(item);
 	}
 
@@ -191,9 +191,7 @@ public class DownloadService extends IntentService {
 		broadcastManager = LocalBroadcastManager
 				.getInstance(getApplicationContext());
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
 		Intent resumePlayActivity = new Intent(this, MusicPlay.class);
-		resumePlayActivity.setAction(MusicPlay.ACTION_RESUME);
 		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
 				resumePlayActivity, PendingIntent.FLAG_UPDATE_CURRENT);
 		notificationBuilder.setContentIntent(pendingIntent);
@@ -205,17 +203,17 @@ public class DownloadService extends IntentService {
 		broadcastManager.sendBroadcast(intent);
 	}
 
-	private void sendNotification(int drawableId, String title, String content,
-			int notificationId) {
+	private void sendNotification(int drawableId, String tickerText,String title, String content) {
 		notificationBuilder.setSmallIcon(drawableId);
-		notificationBuilder.setContentTitle("萌否音乐:"+title);
+		notificationBuilder.setTicker("萌否音乐:" + tickerText);
+		notificationBuilder.setContentTitle("萌否音乐:" + title);
 		notificationBuilder.setContentText(content);
-		notificationManager.notify(notificationId, notificationBuilder.build());
+		notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
 	}
 
 	private int checkConectivity() {
 		NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
-		if (ni==null||!ni.isConnected()||!ni.isAvailable()) {
+		if (ni == null ||  !ni.isAvailable() ||!ni.isConnected()) {
 			return -1;
 		}
 		return ni.getType();

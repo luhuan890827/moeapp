@@ -28,8 +28,10 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
+
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -74,23 +76,6 @@ public class MusicBrowse extends Activity {
 		connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 		setViewPager();
 
-		// test code
-		// IntentFilter intentFilter = new IntentFilter();
-		// intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-		// intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-		// registerReceiver(new BroadcastReceiver() {
-		//
-		// @Override
-		// public void onReceive(Context context, Intent intent) {
-		// Bundle b = intent.getExtras();
-		// Set<String> keySet =b.keySet();
-		//
-		// for (String string : keySet) {
-		// Log.e(string, b.get(string)+"");
-		// }
-		// }
-		// },intentFilter );
-
 	}
 	@Override
 	protected void onStop() {
@@ -123,12 +108,35 @@ public class MusicBrowse extends Activity {
 				.getCurrentItem()];
 		if (stack.isEmpty()) {
 			super.onBackPressed();
+			
 		} else {
 			backView();
 		}
 
 	}
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// TODO Auto-generated method stub
+		getMenuInflater().inflate(R.menu.app_menu, menu);
+		
+		return super.onCreateOptionsMenu(menu);
+		
+	}
+	
+	@Override
+	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+		// TODO Auto-generated method stub
+		switch (item.getItemId()) {
+		case R.id.to_app_pref:
+			Intent intent = new Intent(this, AppPref.class);
+			startActivity(intent);
+			break;
 
+		default:
+			break;
+		}
+		return super.onMenuItemSelected(featureId, item);
+	}
 	private void backView() {
 		
 		Stack<AdapterDataSet> stack = vStatus.adapterDatas[mViewPager
@@ -153,7 +161,10 @@ public class MusicBrowse extends Activity {
 			json = http.oauthRequest(url);
 			boolean hasErr = JSON.parseObject(json)
 					.getBooleanValue("has_error");
-
+//			int errCode = JSON.parseObject(json).getJSONObject("error").getIntValue("code");
+//			if(errCode!=200){
+//				hasErr = true;
+//			}
 			if (hasErr) {
 				mHandler.post(paramErrToast);
 				if (backOnErr) {
@@ -273,7 +284,7 @@ public class MusicBrowse extends Activity {
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
 			NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
-			if (ni == null || !ni.isConnected() || !ni.isAvailable()) {
+			if (ni == null ||  !ni.isAvailable() ||!ni.isConnected()) {
 				Toast.makeText(MusicBrowse.this, "当前没有可用的网络连接",
 						Toast.LENGTH_SHORT).show();
 				return;
@@ -302,11 +313,11 @@ public class MusicBrowse extends Activity {
 		public void onItemClick(final AdapterView<?> arg0, View arg1,
 				final int arg2, long arg3) {
 			NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
-			if (ni == null || !ni.isConnected() || !ni.isAvailable()) {
-				Toast.makeText(MusicBrowse.this, "当前没有可用的网络连接",
-						Toast.LENGTH_SHORT).show();
-				return;
-			}
+//			if (ni == null || !ni.isConnected() || !ni.isAvailable()) {
+//				Toast.makeText(MusicBrowse.this, "当前没有可用的网络连接",
+//						Toast.LENGTH_SHORT).show();
+//				return;
+//			}
 			AdapterDataSet set = new AdapterDataSet();
 			ListView listView = (ListView) arg0;
 			set.adapter = listView.getAdapter();
@@ -385,27 +396,32 @@ public class MusicBrowse extends Activity {
 				protected void onPreExecute() {
 					super.onPreExecute();
 					vStatus.views.get(0).addFooterView(loadingProgress);
+					vStatus.views.get(0).setOnItemClickListener(null);
 					vStatus.views.get(0).setAdapter(null);
 				}
 
 				@Override
 				protected Object[] doInBackground(Object... params) {
+					String url = "http://moe.fm/explore?api=json&api_key=420f4049d93b1c64f5e811187ad3364c05016179a&new_musics=1&hot_musics=1&hot_radios=1&musics=1";
+					
 					if (vStatus.datas.size() == 0) {
-						String url = "http://moe.fm/explore?api=json&api_key=420f4049d93b1c64f5e811187ad3364c05016179a&new_musics=1&hot_musics=1&hot_radios=1&musics=1";
 						String json = getJsonData(url, true);
-						List<SimpleData> newAlbums = JSONUtils.getExpWikiList(
-								json, "new_musics");
-						List<SimpleData> hotRadios = JSONUtils.getExpWikiList(
-								json, "hot_radios");
-						List<SimpleData> musics = JSONUtils.getExpWikiList(
-								json, "musics");
-						List<SimpleData> hotMusics = JSONUtils.getExpWikiList(
-								json, "hot_musics");
+						if(json!=null){
+							List<SimpleData> newAlbums = JSONUtils.getExpWikiList(
+									json, "new_musics");
+							List<SimpleData> hotRadios = JSONUtils.getExpWikiList(
+									json, "hot_radios");
+							List<SimpleData> musics = JSONUtils.getExpWikiList(
+									json, "musics");
+							List<SimpleData> hotMusics = JSONUtils.getExpWikiList(
+									json, "hot_musics");
 
-						vStatus.datas.put("newAlbums", newAlbums);
-						vStatus.datas.put("hotRadios", hotRadios);
-						vStatus.datas.put("musics", musics);
-						vStatus.datas.put("hotMusics", hotMusics);
+							vStatus.datas.put("newAlbums", newAlbums);
+							vStatus.datas.put("hotRadios", hotRadios);
+							vStatus.datas.put("musics", musics);
+							vStatus.datas.put("hotMusics", hotMusics);
+						}
+						
 					}
 					return null;
 				}
@@ -476,7 +492,7 @@ public class MusicBrowse extends Activity {
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
 			NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
-			if (ni == null || !ni.isConnected() || !ni.isAvailable()) {
+			if (ni == null ||  !ni.isAvailable() ||!ni.isConnected()) {
 				Toast.makeText(MusicBrowse.this, "当前没有可用的网络连接",
 						Toast.LENGTH_SHORT).show();
 				return;
@@ -528,8 +544,6 @@ private OnItemClickListener onLocalItemClick = new OnItemClickListener() {
 			data.setParentTitle(c.getString(4));
 			data.setAlbumnCoverUrl(c.getString(7));
 			l.add(data);
-			
-			
 		}
 		Intent playIntent = new Intent(MusicBrowse.this, MusicPlay.class);
 		Bundle bundle = new Bundle();
@@ -570,6 +584,7 @@ private OnItemClickListener onLocalItemClick = new OnItemClickListener() {
 
 			// setHintView(pb);
 			lv.addFooterView(loadingProgress);
+			lv.setOnItemClickListener(null);
 			lv.setAdapter(null);
 			super.onPreExecute();
 
@@ -626,6 +641,7 @@ private OnItemClickListener onLocalItemClick = new OnItemClickListener() {
 			ListView lv = (ListView) vStatus.views.get(mViewPager
 					.getCurrentItem());
 			lv.addFooterView(loadingProgress);
+			lv.setOnItemClickListener(null);
 			lv.setAdapter(null);
 			super.onPreExecute();
 		}
@@ -729,12 +745,12 @@ private OnItemClickListener onLocalItemClick = new OnItemClickListener() {
 
 		public void onClick(View v) {
 			//!!
-//			NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
-//			if (ni == null || !ni.isConnected() || !ni.isAvailable()) {
-//				Toast.makeText(MusicBrowse.this, "当前没有可用的网络连接",
-//						Toast.LENGTH_SHORT).show();
-//				return;
-//			}
+			NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
+			if (ni == null ||  !ni.isAvailable() ||!ni.isConnected()) {
+				Toast.makeText(MusicBrowse.this, "当前没有可用的网络连接",
+						Toast.LENGTH_SHORT).show();
+				return;
+			}
 			v.findViewById(R.id.load_more_progress).setVisibility(View.VISIBLE);
 			String url = (String) v.getTag(R.string.more_btn_url);
 			LoadMoreTaskPlayable task = new LoadMoreTaskPlayable();

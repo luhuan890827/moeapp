@@ -36,10 +36,10 @@
         </android.support.v4.view.PagerTabStrip>
     </android.support.v4.view.ViewPager>
 
-    <ImageButton
+    <RelativeLayout
         android:id="@+id/browser_control"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:layout_alignParentBottom="true" />
+        android:layout_alignParentBottom="true" ></RelativeLayout>
 
 </RelativeLayout>

@@ -1,7 +1,4 @@
 package fm.moe.luhuan.activities;
-
-import org.scribe.model.Verifier;
-
 import fm.moe.luhuan.R;
 import fm.moe.luhuan.http.MoeHttp;
 import android.app.Activity;
@@ -11,9 +8,11 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+
 import android.net.UrlQuerySanitizer;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -24,16 +23,15 @@ import android.view.animation.Animation.AnimationListener;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 public class AppInit extends Activity {
 	private WebView wv;
 	private MoeHttp oauth;
 	private ImageView logo;
-	SharedPreferences pref;
-	String authUrl;
-	RelativeLayout mainLayout;
+	private SharedPreferences pref;
+	private String authUrl;
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -45,16 +43,16 @@ public class AppInit extends Activity {
 		oauth = new MoeHttp(this);
 		logo = (ImageView) findViewById(R.id.init_logo);
 		wv = (WebView) findViewById(R.id.oauth_wv);
-		mainLayout = (RelativeLayout) findViewById(R.id.oauth_main);
+		
 		pref =getSharedPreferences("token", MODE_PRIVATE);
 		if (pref.contains("access_token")) {
-			startAlphaAnimation(1200, false);
+			startAlphaAnimation(1600, false);
 		} else {
 			ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-			if (cm.getActiveNetworkInfo() == null
-					|| !cm.getActiveNetworkInfo().isAvailable()) {
-				Toast.makeText(this, "首次启动需要有效的网络连接，单击后退以退出TvT",
-						Toast.LENGTH_LONG).show();
+			NetworkInfo ni = cm.getActiveNetworkInfo();
+			if (ni == null ||  !ni.isAvailable() ||!ni.isConnected()) {
+				Toast.makeText(this, "首次启动需要有效的网络连接，请检查你的网络设置",
+						Toast.LENGTH_SHORT).show();
 			} else {
 				loadOauthPage();
 			}
@@ -64,7 +62,7 @@ public class AppInit extends Activity {
 	}
 
 	public void startAlphaAnimation(int duration, final boolean showWebView) {
-		AlphaAnimation aa = new AlphaAnimation(1f, 0);
+		AlphaAnimation aa = new AlphaAnimation(1f, 0.5f);
 		aa.setAnimationListener(new AnimationListener() {
 
 			public void onAnimationStart(Animation animation) {
@@ -170,7 +168,12 @@ public class AppInit extends Activity {
 			@Override
 			protected String doInBackground(Object... params) {
 				// Log.e("request", "start");
-				authUrl = oauth.requestToken();
+				try{
+					authUrl = oauth.requestToken();
+				}catch(Exception e){
+					//Log.e("oauth failed", "",e);
+					mHandler.post(onOauthFailed);
+				}
 				// Log.e("request", "complete");
 				return null;
 			}
@@ -183,4 +186,14 @@ public class AppInit extends Activity {
 		}.execute();
 
 	}
+	private Handler mHandler = new Handler();
+	private Runnable onOauthFailed = new Runnable() {
+		
+		public void run() {
+			// TODO Auto-generated method stub
+			Toast.makeText(AppInit.this, "萌否服务器似乎有些问题，请稍后再来", Toast.LENGTH_SHORT).show();
+			AppInit.this.finish();
+			
+		}
+	};
 }

@@ -30,7 +30,7 @@ public final class R {
         public static final int stateful_btn=0x7f020006;
     }
     public static final class id {
-        public static final int big_cover=0x7f09001f;
+        public static final int big_cover=0x7f090020;
         public static final int browse_progress=0x7f09000b;
         public static final int browser_control=0x7f09000d;
         public static final int fm_item_artist=0x7f090011;
@@ -44,32 +44,33 @@ public final class R {
         public static final int ib_switch_act=0x7f090017;
         public static final int init_logo=0x7f090001;
         public static final int init_progress=0x7f090003;
-        public static final int item_description=0x7f090028;
-        public static final int item_title=0x7f090027;
-        public static final int listView1=0x7f09001e;
+        public static final int item_description=0x7f090029;
+        public static final int item_title=0x7f090028;
         public static final int load_more_progress=0x7f090009;
         public static final int main_wrapper=0x7f09000a;
-        public static final int menu_settings=0x7f090029;
         public static final int oauth_main=0x7f090000;
         public static final int oauth_success_text=0x7f090004;
         public static final int oauth_wv=0x7f090002;
+        public static final int player_list_view=0x7f09001e;
         public static final int player_lower=0x7f090015;
         public static final int player_middle=0x7f090014;
         public static final int player_seek=0x7f090016;
+        public static final int player_song_view=0x7f09001f;
         public static final int player_upper=0x7f090013;
-        public static final int player_view_switch=0x7f090026;
+        public static final int player_view_switch=0x7f090027;
         public static final int playing_seekbar=0x7f09001c;
-        public static final int playing_song_albumn=0x7f090025;
-        public static final int playing_song_artist=0x7f090024;
-        public static final int playing_song_title=0x7f090023;
+        public static final int playing_song_albumn=0x7f090026;
+        public static final int playing_song_artist=0x7f090025;
+        public static final int playing_song_title=0x7f090024;
         public static final int simple_item_title=0x7f090006;
-        public static final int song_fav=0x7f090020;
-        public static final int song_save=0x7f090021;
-        public static final int song_share=0x7f090022;
+        public static final int song_fav=0x7f090021;
+        public static final int song_save=0x7f090022;
+        public static final int song_share=0x7f090023;
         public static final int start_moe=0x7f090005;
         public static final int tab_strip=0x7f09000e;
         public static final int time_full=0x7f09001d;
         public static final int time_played=0x7f09001b;
+        public static final int to_app_pref=0x7f09002a;
         public static final int view_pager=0x7f09000c;
         public static final int wrapped_list=0x7f090007;
     }
@@ -90,11 +91,7 @@ public final class R {
         public static final int simple_list_item=0x7f03000d;
     }
     public static final class menu {
-        public static final int activity_main=0x7f080000;
-        public static final int activity_oauth=0x7f080001;
-        public static final int activity_play_music=0x7f080002;
-        public static final int activity_player=0x7f080003;
-        public static final int activity_song_list=0x7f080004;
+        public static final int app_menu=0x7f080000;
     }
     public static final class string {
         public static final int app_name=0x7f060000;

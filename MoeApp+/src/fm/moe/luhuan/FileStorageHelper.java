@@ -26,6 +26,7 @@ public class FileStorageHelper {
 	private File songDir;
 	private File coverDir;
 	private MoeDbHelper dbHelper;
+	private Context ctx;
 	public FileStorageHelper(Context c) {
 		songDir = new File(c.getExternalFilesDir(null), "song");
 		if (!songDir.exists()) {
@@ -35,6 +36,7 @@ public class FileStorageHelper {
 		if (!coverDir.exists()) {
 			coverDir.mkdir();
 		}
+		ctx = c;
 		dbHelper = new MoeDbHelper(c);
 	}
 	public Bitmap getItemCoverBitmap(SimpleData item){
@@ -107,5 +109,16 @@ public class FileStorageHelper {
 			Log.e("FileStorageHelper", "write data to song err");
 		}
 		
+	}
+	public String getTempImageUri(Bitmap bm) throws IOException{
+		
+		ByteArrayOutputStream bas = new ByteArrayOutputStream();
+		bm.compress(CompressFormat.JPEG, 100, bas);
+		File tempFile = new File(ctx.getExternalCacheDir(), "tempImage.jpg");
+		OutputStream os = new FileOutputStream(tempFile);
+		os.write(bas.toByteArray());
+		os.close();
+		
+		return tempFile.getAbsolutePath();
 	}
 }
