@@ -324,7 +324,6 @@ public class MusicPlay extends Activity {
 		}
 
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			// onbind = true;
 			musicService = ((PlayerBinder) service).getService();
 			if (listView.getAdapter() == null) {
 				SimpleDataAdapter adapter = new SimpleDataAdapter(getApplicationContext(), musicService.playList);
@@ -389,15 +388,17 @@ public class MusicPlay extends Activity {
 
 		private void shareSong() {
 			Intent shareIntent = new Intent(Intent.ACTION_SEND);
-			shareIntent.setType("image/jpg");
+			
 			//shareIntent.putExtra(Intent.EXTRA_TEXT, "test");
 			try {
 				Bitmap bm = imageCache.get(currentItem.getId());
 				String imageUrl = musicService.fileHelper.getTempImageUri(bm);
-				Uri uri = Uri.fromFile(new File("/mnt/stcard/MASD.jpg"));
+				Uri uri = Uri.fromFile(new File(imageUrl));
 				shareIntent.putExtra(Intent.EXTRA_STREAM,uri);
+				shareIntent.setType("image/jpeg");
+				shareIntent.putExtra(Intent.EXTRA_TEXT, "http://moe.fm/song/"+currentItem.getId());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				Log.e("", "",e);
 				e.printStackTrace();
 			}
 			
