@@ -8,7 +8,7 @@ import java.io.IOException;
 
 import java.io.Serializable;
 
-import fm.moe.luhuan.FileStorageHelper;
+import fm.moe.luhuan.DataStorageHelper;
 
 import fm.moe.luhuan.activities.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
@@ -58,7 +58,7 @@ public class DownloadService extends IntentService {
 	private Builder notificationBuilder;
 	private NotificationManager notificationManager;
 	// private PendingIntent pendingIntent;
-	private FileStorageHelper fileHelper;
+	private DataStorageHelper fileHelper;
 
 	private ConnectivityManager connectivityManager;
 	public static final int NOTIFICATION_ID = 0;
@@ -74,7 +74,7 @@ public class DownloadService extends IntentService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		fileHelper = new FileStorageHelper(this);
+		fileHelper = new DataStorageHelper(this);
 
 		initNotification();
 		//to be change

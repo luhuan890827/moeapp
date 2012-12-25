@@ -1,16 +1,14 @@
 package fm.moe.luhuan.activities;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-
 import java.util.List;
-
-import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import com.alibaba.fastjson.JSON;
 
 import fm.moe.luhuan.R;
 import fm.moe.luhuan.adapters.SimpleDataAdapter;
@@ -24,10 +22,13 @@ import fm.moe.luhuan.service.PlayService.PlayerBinder;
 import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -35,6 +36,8 @@ import android.content.SharedPreferences;
 
 import android.graphics.Bitmap;
 
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -42,7 +45,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.util.LruCache;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseArray;
@@ -50,7 +52,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup.LayoutParams;
-import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -64,7 +65,6 @@ import android.widget.Toast;
 
 public class MusicPlay extends Activity {
 
-	public static final String PLAY_ACT_CREATE = "play act create";
 	public static final String ACTION_RESUME = "resume playactivity";
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("mm:ss");
 	private MoeHttp moeHttp;
@@ -73,8 +73,9 @@ public class MusicPlay extends Activity {
 	private Handler mHandler = new Handler();
 	private AsyncTask coverTask;
 	private PlayService musicService;
-//	private LruCache<Integer, Bitmap> imageCache = new LruCache<Integer, Bitmap>(
-//			15);
+	// private LruCache<Integer, Bitmap> imageCache = new LruCache<Integer,
+	// Bitmap>(
+	// 15);
 	private SparseArray<Bitmap> imageCache = new SparseArray<Bitmap>();
 	private LocalBroadcastManager broadcastManager;;
 	private IntentFilter intentFilter = new IntentFilter();
@@ -86,13 +87,15 @@ public class MusicPlay extends Activity {
 	private ImageView albumCover;
 	private ListView listView;
 	private RelativeLayout songView;
+	private ConnectivityManager connectivityManager;
+	private boolean isWaiting = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.player);
-		// Log.e("music play", "create");
+		 Log.e("music play", "create");
 		initViews();
 		listView = (ListView) findViewById(R.id.player_list_view);
 		songView = (RelativeLayout) findViewById(R.id.player_song_view);
@@ -102,28 +105,19 @@ public class MusicPlay extends Activity {
 		setBackTab();
 		moeHttp = new MoeHttp(this);
 
-		Intent intent = getIntent();
+		Intent incomingIntent = getIntent();
+		connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+		final Bundle bundle = incomingIntent.getExtras();
 
-		Bundle bundle = intent.getExtras();
+		pref = getSharedPreferences("app_settings", MODE_PRIVATE);
+		NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
+
 		if (bundle != null) {
-
-			List<SimpleData> playList = (ArrayList<SimpleData>) bundle
-					.get(PlayService.EXTRA_PLAYLIST);
-			if (bundle.getBoolean(PlayService.EXTRA_IF_NEED_NETWORK)
-					&& getSharedPreferences("App_settings", MODE_PRIVATE)
-							.getBoolean(
-									getResources()
-											.getString(
-													fm.moe.luhuan.R.string.pref_key_play_only_on_wifi),
-									false)) {
-				// to do
-			}
-			((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
-					.cancel(PlayService.NOTIFICATION_ID);
-
 			Intent serviceIntent = new Intent(this, PlayService.class);
 			serviceIntent.putExtras(bundle);
-			serviceIntent.setAction(PLAY_ACT_CREATE);
+			serviceIntent.setAction(PlayService.ACTION_INIT_LIST);
+			startService(serviceIntent);
+			serviceIntent.setAction(PlayService.ACTION_START_PLAY);
 			startService(serviceIntent);
 
 		}
@@ -133,6 +127,8 @@ public class MusicPlay extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
+		((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+				.cancel(PlayService.NOTIFICATION_ID);
 		// ((NotificationManager)
 		// getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
 		Intent bindIntent = new Intent(this, PlayService.class);
@@ -194,11 +190,8 @@ public class MusicPlay extends Activity {
 				LayoutParams.MATCH_PARENT, dm.widthPixels));
 	}
 
-	
-		
-	
-
 	private void setStaticView() {
+		
 		currentItem = musicService.playList.get(musicService.nowIndex);
 		// Log.e("parent id", currentItem.getParentId() + "");
 		texts.title.setText(currentItem.getTitle());
@@ -328,7 +321,8 @@ public class MusicPlay extends Activity {
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			musicService = ((PlayerBinder) service).getService();
 			if (listView.getAdapter() == null) {
-				SimpleDataAdapter adapter = new SimpleDataAdapter(getApplicationContext(), musicService.playList);
+				SimpleDataAdapter adapter = new SimpleDataAdapter(
+						getApplicationContext(), musicService.playList);
 				listView.setAdapter(adapter);
 				listView.setOnItemClickListener(onListViewClick);
 			}
@@ -384,27 +378,82 @@ public class MusicPlay extends Activity {
 		}
 
 		private void switchSongFav() {
-			// TODO Auto-generated method stub
 
+			new Thread() {
+				public void run() {
+					String ope = null;
+					if (currentItem.isFav()) {
+						ope = "delete";
+					} else {
+						ope = "add";
+					}
+					String url = "http://api.moefou.org/fav/" + ope
+							+ ".json?fav_obj_type=song&fav_type=1&fav_obj_id="
+							+ currentItem.getId();
+					try {
+						String json = moeHttp.oauthRequest(url);
+
+						if (!JSON.parseObject(json).getJSONObject("response")
+								.getJSONObject("information")
+								.getBoolean("has_error")) {
+							currentItem.setFav(!currentItem.isFav());
+							musicService.fileHelper.updateFav(currentItem);
+							mHandler.post(new Runnable() {
+
+								public void run() {
+									// Log.e("!!", "!!");
+									if (currentItem.isFav()) {
+										buttons.fav
+												.setImageDrawable(getResources()
+														.getDrawable(
+																android.R.drawable.btn_star_big_on));
+										Toast.makeText(getApplicationContext(),
+												"收藏成功", Toast.LENGTH_SHORT)
+												.show();
+									} else {
+										buttons.fav
+												.setImageDrawable(getResources()
+														.getDrawable(
+																android.R.drawable.btn_star_big_off));
+										Toast.makeText(getApplicationContext(),
+												"已取消收藏", Toast.LENGTH_SHORT)
+												.show();
+									}
+								}
+							});
+						}
+						;
+
+						// Log.e("fav", json);
+					} catch (Exception e) {
+						Log.e("", "", e);
+					}
+				}
+			}.start();
 		}
 
 		private void shareSong() {
 			Intent shareIntent = new Intent(Intent.ACTION_SEND);
-			
-			//shareIntent.putExtra(Intent.EXTRA_TEXT, "test");
+
+			// shareIntent.putExtra(Intent.EXTRA_TEXT, "test");
 			try {
 				Bitmap bm = imageCache.get(currentItem.getId());
 				String imageUrl = musicService.fileHelper.getTempImageUri(bm);
 				Uri uri = Uri.fromFile(new File(imageUrl));
-				shareIntent.putExtra(Intent.EXTRA_STREAM,uri);
+				shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
 				shareIntent.setType("image/jpeg");
-				shareIntent.putExtra(Intent.EXTRA_TEXT, "http://moe.fm/song/"+currentItem.getId());
+				shareIntent
+						.putExtra(
+								Intent.EXTRA_TEXT,
+								"http://moe.fm/listen?song="
+										+ currentItem.getId()
+										+ "  ,分享一首来自@萌否网 的歌曲,"
+										+ currentItem.getTitle());
 			} catch (IOException e) {
-				Log.e("", "",e);
+				Log.e("", "", e);
 				e.printStackTrace();
 			}
-			
-			
+
 			startActivity(Intent.createChooser(shareIntent, "分享到..."));
 		}
 
@@ -460,6 +509,9 @@ public class MusicPlay extends Activity {
 						"正在播放", "正在播放", currentItem.getTitle());
 				((ImageButton) v).setImageDrawable(getResources().getDrawable(
 						android.R.drawable.ic_media_play));
+			} else if (isWaiting) {
+				isWaiting = false;
+				musicService.playSongAtIndex(musicService.nowIndex);
 			}
 		}
 
@@ -605,7 +657,7 @@ public class MusicPlay extends Activity {
 
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
-			if(musicService!=null){
+			if (musicService != null) {
 				musicService.playSongAtIndex(arg2);
 			}
 		}

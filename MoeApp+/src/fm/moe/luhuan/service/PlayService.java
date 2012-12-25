@@ -1,8 +1,9 @@
 package fm.moe.luhuan.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
-import fm.moe.luhuan.FileStorageHelper;
+import fm.moe.luhuan.DataStorageHelper;
 import fm.moe.luhuan.activities.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
 
@@ -28,15 +29,19 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 public class PlayService extends Service {
+	
 	public static final String EXTRA_IF_NEED_NETWORK = "need network";
 	public static final String EXTRA_PLAYLIST = "playList";
 	public static final String EXTRA_PLAYLIST_ID = "playListId";
 	public static final String EXTRA_SELECTED_INDEX = "selectedIndex";
 	public static final String ACTION_PLAYER_STATE_CHANGE = "player state change";
-	public static final int NOTIFICATION_ID =1;
+	public static final String ACTION_START_PLAY = "start play";
+	public static final String ACTION_INIT_LIST = "init list";
+	public static final int NOTIFICATION_ID = 1;
 	// 1 for prepaed,0 for complete,-1 for err,2 for bufferedUpdate
 	public static final String EXTRA_PLAYER_STATE = "player state";
 	public static final String EXTRA_PLAYER_BUFFERED_PERCENT = "buffered percent";
+	
 	private LocalBroadcastManager broadcastManager;
 	private Intent broadcast = new Intent();
 	private PlayerBinder binder = new PlayerBinder();
@@ -46,31 +51,48 @@ public class PlayService extends Service {
 	public String playListId;
 	public int nowIndex = -1;
 	public MediaPlayer player = new MediaPlayer();
-	public FileStorageHelper fileHelper;
+	public DataStorageHelper fileHelper;
 	public boolean isPrepared = false;
 	public int bufferedPercent = 0;
+
 	@Override
 	public void onCreate() {
 		// TODO Auto-generated method stub
+
 		super.onCreate();
 		initNotification();
 		initMediaPlayer();
-		fileHelper = new FileStorageHelper(this);
+		fileHelper = new DataStorageHelper(this);
 		broadcastManager = LocalBroadcastManager
 				.getInstance(getApplicationContext());
+
 		registerReceiver(receiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
 		// Log.e("service", "oncreate");
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		// TODO Auto-generated method stub
-		//Log.e("service", "onstartcommand");
-		if (intent != null
-				&& intent.getAction().equals(MusicPlay.PLAY_ACT_CREATE)) {
+		if (intent != null) {
+			if (intent.getAction().equals(ACTION_INIT_LIST)) {
+				Bundle bundle = intent.getExtras();
+				playList = (ArrayList<SimpleData>) bundle.get(EXTRA_PLAYLIST);
+				nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
+			}else if(intent.getAction().equals(ACTION_START_PLAY)){
+				Bundle bundle = intent.getExtras();
+				nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
+				playSongAtIndex(nowIndex);
+			}
 
-			initPlayer(intent);
-
+		} else {
+			try {
+				Object[] os = fileHelper.getPersistedState();
+				nowIndex = (Integer) os[0];
+				playList = (ArrayList<SimpleData>) os[1];
+				playSongAtIndex(nowIndex);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return START_STICKY;
 	}
@@ -89,6 +111,7 @@ public class PlayService extends Service {
 		return super.onUnbind(intent);
 
 	}
+
 	@Override
 	public void onDestroy() {
 		// TODO Auto-generated method stub
@@ -97,23 +120,16 @@ public class PlayService extends Service {
 		player.release();
 		unregisterReceiver(receiver);
 	}
-	private void initPlayer(Intent intent) {
-		Bundle bundle = intent.getExtras();
-		playList = (ArrayList<SimpleData>) bundle.get(EXTRA_PLAYLIST);
-		nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
-		playListId = (String) bundle.get(EXTRA_PLAYLIST_ID);
-		playSongAtIndex(nowIndex);
 
-	}
+	
 
 	public void playSongAtIndex(int n) {
 		// TODO Auto-generated method stub
-		
-		
+
 		player.reset();
 
 		String url = fileHelper.getItemMp3Url(playList.get(n));
-		
+
 		// Uri uri = Uri.parse(url);
 		// why block here????
 		try {
@@ -140,24 +156,25 @@ public class PlayService extends Service {
 	private void initNotification() {
 		Intent resumePlayActivity = new Intent(this, MusicPlay.class);
 		resumePlayActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-		
+
 		notificationBuilder = new Builder(this);
 		broadcastManager = LocalBroadcastManager
 				.getInstance(getApplicationContext());
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-		
 		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
 				resumePlayActivity, PendingIntent.FLAG_UPDATE_CURRENT);
 		notificationBuilder.setContentIntent(pendingIntent);
 	}
 
-	public void sendNotification(int drawableId, String tickerText,String title, String content) {
+	public void sendNotification(int drawableId, String tickerText,
+			String title, String content) {
 		notificationBuilder.setSmallIcon(drawableId);
 		notificationBuilder.setTicker("萌否音乐:" + tickerText);
 		notificationBuilder.setContentTitle("萌否音乐:" + title);
 		notificationBuilder.setContentText(content);
-		notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+		notificationManager
+				.notify(NOTIFICATION_ID, notificationBuilder.build());
 	}
 
 	public class PlayerBinder extends Binder {
@@ -173,7 +190,8 @@ public class PlayService extends Service {
 			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
 			broadcast.putExtra(EXTRA_PLAYER_STATE, -1);
 			broadcastManager.sendBroadcast(broadcast);
-			sendNotification(R.drawable.stat_notify_error, "播放已终止", "播放已终止", "播放器出错");
+			sendNotification(R.drawable.stat_notify_error, "播放已终止", "播放已终止",
+					"播放器出错");
 			player.reset();
 			// Log.e("broadcast", "send");
 			return true;
@@ -185,7 +203,8 @@ public class PlayService extends Service {
 			isPrepared = true;
 			bufferedPercent = 100;
 			mp.start();
-			sendNotification(R.drawable.ic_media_play, playList.get(nowIndex).getTitle(),"正在播放", playList.get(nowIndex).getTitle());
+			sendNotification(R.drawable.ic_media_play, playList.get(nowIndex)
+					.getTitle(), "正在播放", playList.get(nowIndex).getTitle());
 			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
 			broadcast.putExtra(EXTRA_PLAYER_STATE, 0);
 
@@ -199,6 +218,7 @@ public class PlayService extends Service {
 			if (playList.size() - 1 > nowIndex) {
 				playSongAtIndex(++nowIndex);
 			}
+			new DoPersistThread().start();
 			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
 			broadcast.putExtra(EXTRA_PLAYER_STATE, 1);
 			broadcastManager.sendBroadcast(broadcast);
@@ -219,17 +239,31 @@ public class PlayService extends Service {
 		}
 	};
 	private BroadcastReceiver receiver = new BroadcastReceiver() {
-		
+
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if(intent.getIntExtra("state", 1) == 0){
-				if(player.isPlaying()){
+			if (intent.getIntExtra("state", 1) == 0) {
+				if (player.isPlaying()) {
 					player.pause();
-					sendNotification(R.drawable.ic_media_pause, "播放已暂停", "播放已暂停", "耳机已拔出");
+					sendNotification(R.drawable.ic_media_pause, "播放已暂停",
+							"播放已暂停", "耳机已拔出");
 				}
 			}
-			
+
 		}
+	};
+
+	private class DoPersistThread extends Thread {
+
+		public void run() {
+			try {
+				fileHelper.persistState(playList, nowIndex);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
 	};
 
 }

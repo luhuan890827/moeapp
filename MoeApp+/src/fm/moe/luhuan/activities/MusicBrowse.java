@@ -16,6 +16,7 @@ import fm.moe.luhuan.http.MoeHttp;
 import fm.moe.luhuan.service.PlayService;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
@@ -61,7 +62,7 @@ public class MusicBrowse extends Activity {
 		//requestWindowFeature(Window.FEATURE_NO_TITLE);
 		//setTheme(android.R.style.Theme_Holo);
 		super.onCreate(savedInstanceState);
-		
+		//SharedPreferences pref = getSharedPreferences("app_settings", MODE_PRIVATE);
 		setContentView(R.layout.music_browse);
 		inflater = LayoutInflater.from(this);
 		loadingProgress = (LinearLayout) inflater.inflate(
