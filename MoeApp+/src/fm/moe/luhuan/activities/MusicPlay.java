@@ -190,21 +190,21 @@ public class MusicPlay extends Activity {
 				LayoutParams.MATCH_PARENT, dm.widthPixels));
 	}
 
-	private void setStaticView() {
+	private void setStaticView(SimpleData item) {
 		
-		currentItem = musicService.playList.get(musicService.nowIndex);
+		
 		// Log.e("parent id", currentItem.getParentId() + "");
-		texts.title.setText(currentItem.getTitle());
-		texts.artist.setText(currentItem.getArtist());
-		if (currentItem.isFav()) {
+		texts.title.setText(item.getTitle());
+		texts.artist.setText(item.getArtist());
+		if (item.isFav()) {
 			buttons.fav.setImageDrawable(getResources().getDrawable(
 					android.R.drawable.btn_star_big_on));
 		} else {
 			buttons.fav.setImageDrawable(getResources().getDrawable(
 					android.R.drawable.btn_star_big_off));
 		}
-		if (currentItem.getArtist() == null
-				|| currentItem.getArtist().equals("")) {
+		if (item.getArtist() == null
+				|| item.getArtist().equals("")) {
 			texts.artist.setText("未知艺术家");
 		}
 		if (musicService.isPrepared) {
@@ -221,8 +221,8 @@ public class MusicPlay extends Activity {
 					android.R.drawable.ic_media_play));
 		}
 
-		texts.album.setText(currentItem.getParentTitle());
-		loadCover(currentItem.getAlbumnCoverUrl());
+		texts.album.setText(item.getParentTitle());
+		loadCover(item.getAlbumnCoverUrl());
 
 	}
 
@@ -326,7 +326,8 @@ public class MusicPlay extends Activity {
 				listView.setAdapter(adapter);
 				listView.setOnItemClickListener(onListViewClick);
 			}
-			setStaticView();
+			currentItem = musicService.playList.get(musicService.nowIndex);
+			setStaticView(currentItem);
 			mHandler.post(refreshPlayedTimeRunnable);
 
 		}
@@ -480,6 +481,7 @@ public class MusicPlay extends Activity {
 					musicService.playSongAtIndex(tarIndex);
 					clickCount = 0;
 					mHandler.removeCallbacks(refreshPlayedTimeRunnable);
+					currentItem = musicService.playList.get(musicService.nowIndex);
 					mHandler.post(setStaticViewRunnable);
 					mHandler.post(resetTimeinfoRunnable);
 
@@ -580,7 +582,8 @@ public class MusicPlay extends Activity {
 				// isPlayerPrepared = true;
 				break;
 			case 1:// for completion
-				setStaticView();
+				currentItem = musicService.playList.get(musicService.nowIndex);
+				setStaticView(currentItem);
 				mHandler.removeCallbacks(refreshPlayedTimeRunnable);
 				if (!(musicService.playList.size() - 1 == musicService.nowIndex)) {
 					mHandler.post(resetTimeinfoRunnable);
@@ -601,7 +604,8 @@ public class MusicPlay extends Activity {
 	private Runnable setStaticViewRunnable = new Runnable() {
 
 		public void run() {
-			setStaticView();
+			
+			setStaticView(currentItem);
 		}
 	};
 	private Runnable refreshPlayedTimeRunnable = new Runnable() {
