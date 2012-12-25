@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" 
+    
+    >
+    <CheckBoxPreference 
+        android:title="仅通过WIFI播放未下载的音乐"
+        android:key="@string/pref_key_download_only_on_wifi"/>
+	<CheckBoxPreference 
+	    android:title="仅通过WIFI下载音乐"
+	    android:key="@string/pref_key_play_only_on_wifi"/>
+	<Preference android:title="清除授权信息" />
+</PreferenceScreen>

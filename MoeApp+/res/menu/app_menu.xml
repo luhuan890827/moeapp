@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:title="设置"
+        android:orderInCategory="100"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:id="@+id/to_app_pref"
+        />
+
+</menu>

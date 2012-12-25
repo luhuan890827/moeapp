@@ -1,17 +1,22 @@
 package fm.moe.luhuan;
 
-import java.io.BufferedOutputStream;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 
 import fm.moe.luhuan.beans.data.SimpleData;
-
-import android.app.DownloadManager;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -19,15 +24,14 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Bitmap.CompressFormat;
-import android.os.Environment;
 import android.util.Log;
 
-public class FileStorageHelper {
+public class DataStorageHelper {
 	private File songDir;
 	private File coverDir;
 	private MoeDbHelper dbHelper;
 	private Context ctx;
-	public FileStorageHelper(Context c) {
+	public DataStorageHelper(Context c) {
 		songDir = new File(c.getExternalFilesDir(null), "song");
 		if (!songDir.exists()) {
 			songDir.mkdir();
@@ -120,5 +124,43 @@ public class FileStorageHelper {
 		os.close();
 		
 		return tempFile.getAbsolutePath();
+	}
+	public void updateFav (SimpleData item){
+		ContentValues cv = new ContentValues();
+		cv.put("is_fav", item.isFav());
+		SQLiteDatabase db = dbHelper.getWritableDatabase();
+		db.update(MoeDbHelper.TABLE_NAME, cv, "_id=?", new String[]{item.getId()+""});
+		db.close();
+	}
+	public void persistState(List<SimpleData> list,int n) throws IOException{
+		File status = new File(ctx.getCacheDir(),".playstatus");
+		JSONObject jo = new JSONObject();
+		
+		jo.put("index", n);
+		jo.put("list", list);
+		
+		FileOutputStream fos = new FileOutputStream(status);
+		fos.write(jo.toJSONString().getBytes());
+		fos.close();
+	}
+	public Object[] getPersistedState() throws IOException{
+		File status = new File(ctx.getCacheDir(),".playstatus");
+		byte[] data = new byte[(int) status.length()];
+		FileInputStream fis = new FileInputStream(status);
+		fis.read(data);
+		String json = new String(data);
+		fis.close();
+		JSONObject jo = JSON.parseObject(json);
+		
+		JSONArray aList = jo.getJSONArray("list");
+		
+		ArrayList<SimpleData> list = new ArrayList<SimpleData>();
+		
+		for(int i = 0;i<aList.size();i++){
+			SimpleData item = JSON.parseObject(aList.getString(i), SimpleData.class);
+			list.add(item);
+		}
+		
+		return new Object[]{jo.getInteger("index"),list};
 	}
 }
