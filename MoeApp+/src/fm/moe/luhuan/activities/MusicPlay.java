@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import java.util.List;
 
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,7 +34,6 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 
 import android.graphics.Bitmap;
-import android.graphics.Bitmap.CompressFormat;
 
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -45,6 +45,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.util.LruCache;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -72,8 +73,9 @@ public class MusicPlay extends Activity {
 	private Handler mHandler = new Handler();
 	private AsyncTask coverTask;
 	private PlayService musicService;
-	private LruCache<Integer, Bitmap> imageCache = new LruCache<Integer, Bitmap>(
-			15);
+//	private LruCache<Integer, Bitmap> imageCache = new LruCache<Integer, Bitmap>(
+//			15);
+	private SparseArray<Bitmap> imageCache = new SparseArray<Bitmap>();
 	private LocalBroadcastManager broadcastManager;;
 	private IntentFilter intentFilter = new IntentFilter();
 	private SharedPreferences pref;

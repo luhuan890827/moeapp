@@ -3,7 +3,6 @@ package fm.moe.luhuan.service;
 import java.util.ArrayList;
 
 import fm.moe.luhuan.FileStorageHelper;
-import fm.moe.luhuan.activities.MusicBrowse;
 import fm.moe.luhuan.activities.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
 
@@ -25,8 +24,6 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat.Builder;
-import android.support.v4.app.TaskStackBuilder;
-import android.support.v4.app.TaskStackBuilderHoneycomb;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
