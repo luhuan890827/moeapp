@@ -159,10 +159,9 @@ public class MusicPlay extends Activity {
 	protected void onResume() {
 		super.onResume();
 		
-		// ((NotificationManager)
-		// getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
-		//Intent bindIntent = new Intent(this, PlayService.class);
-		// bindService(bindIntent, conn, BIND_AUTO_CREATE);
+		intentFilter.addAction(PlayService.ACTION_PLAYER_STATE_CHANGE);
+		intentFilter.addAction(DownloadService.ACTION_DOWNLOAD_STATE_CHANGE);
+		registerReceiver(broadcastReceiver, intentFilter);
 		
 
 	}
@@ -170,9 +169,7 @@ public class MusicPlay extends Activity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		//unregisterReceiver(broadcastReceiver);
-		//mHandler.removeCallbacks(refreshPlayedTimeRunnable);
-		// unbindService(conn);
+		unregisterReceiver(broadcastReceiver);
 	}
 
 	@Override
@@ -206,8 +203,8 @@ public class MusicPlay extends Activity {
 	}
 
 	private void initViews() {
-		intentFilter.addAction(PlayService.ACTION_PLAYER_STATE_CHANGE);
-		intentFilter.addAction(DownloadService.ACTION_DOWNLOAD_STATE_CHANGE);
+		
+		
 		texts.bindView();
 		buttons.bindView();
 		seekBar = (SeekBar) findViewById(R.id.playing_seekbar);
@@ -218,7 +215,7 @@ public class MusicPlay extends Activity {
 
 		albumCover.setLayoutParams(new RelativeLayout.LayoutParams(
 				LayoutParams.MATCH_PARENT, dm.widthPixels));
-		registerReceiver(broadcastReceiver, intentFilter);
+		
 	}
 
 	private void setStaticView(SimpleData item) {
@@ -253,7 +250,7 @@ public class MusicPlay extends Activity {
 		playedTime = 0;
 		nowIndex = targetIndex;
 		startService(changeSongIntent);
-		mHandler.removeCallbacks(refreshPlayedTimeRunnable);
+		
 		mHandler.post(setStaticViewRunnable);
 	}
 
@@ -491,7 +488,7 @@ public class MusicPlay extends Activity {
 					
 					sendChangeSongIntent(tarIndex);
 					
-					//mHandler.post(setStaticViewRunnable);
+					
 					mHandler.post(resetTimeinfoRunnable);
 					clickCount = 0;
 
@@ -508,13 +505,13 @@ public class MusicPlay extends Activity {
 			if (isPlayerPlaying) {
 				ppIntent.putExtra(PlayService.EXTRA_SWITCH_PLAY_OR_PAUSE,
 						PlayService.PLAYER_PAUSE);
-				mHandler.removeCallbacks(refreshPlayedTimeRunnable);
+				
 
 				((ImageButton) v).setImageDrawable(getResources().getDrawable(
 						android.R.drawable.ic_media_play));
 				isPlayerPlaying = false;
 			} else if (isPlayerPrepared) {
-				mHandler.post(refreshPlayedTimeRunnable);
+				
 				ppIntent.putExtra(PlayService.EXTRA_SWITCH_PLAY_OR_PAUSE,
 						PlayService.PLAYER_PLAY);
 
@@ -580,6 +577,18 @@ public class MusicPlay extends Activity {
 		}
 
 		private void onPlayerStateChange(Intent intent) {
+			
+			int currentPosition = intent.getIntExtra(PlayService.EXTRA_SONG_CURRENT_POSITION, 0);
+			//Log.e("", "!"+currentPosition);
+			if(currentPosition>0){
+				if (isPlayerPlaying) {
+					texts.played.setText(dateFormat.format(currentPosition));
+					if (!seekBar.isPressed()) {
+						seekBar.setProgress(currentPosition * 100 / fullTime);
+					}
+					//playedTime += 1000;
+				}
+			}
 			switch (intent.getIntExtra(PlayService.EXTRA_PLAYER_STATUS, 0)) {
 			case 0:// for prepared
 				buttons.pp.setImageDrawable(getResources().getDrawable(
@@ -590,7 +599,7 @@ public class MusicPlay extends Activity {
 						PlayService.EXTRA_SONG_DURATION, 1);
 				
 				texts.fullTime.setText(dateFormat.format(fullTime));
-				mHandler.post(refreshPlayedTimeRunnable);
+				
 				
 				break;
 			case 1:// for completion
@@ -598,7 +607,7 @@ public class MusicPlay extends Activity {
 						PlayService.EXTRA_NOW_PLAYING_INDEX, 0);
 				
 				
-				mHandler.removeCallbacks(refreshPlayedTimeRunnable);
+				
 				if ((playList.size() - 1 != intent.getIntExtra(
 						PlayService.EXTRA_NOW_PLAYING_INDEX, 0))) {
 					mHandler.post(resetTimeinfoRunnable);
@@ -633,23 +642,7 @@ public class MusicPlay extends Activity {
 			setStaticView(playList.get(nowIndex));
 		}
 	};
-	private Runnable refreshPlayedTimeRunnable = new Runnable() {
 
-		public void run() {
-			if (isPlayerPlaying) {
-				texts.played.setText(dateFormat.format(playedTime));
-				if (!seekBar.isPressed()) {
-					seekBar.setProgress(playedTime * 100 / fullTime);
-				}
-				playedTime += 1000;
-			}
-
-			// Log.e("progress",
-			// "current="+musicService.player.getCurrentPosition()+",total="+
-			// musicService.player.getDuration());
-			mHandler.postDelayed(this, 1000);
-		}
-	};
 	private Runnable resetTimeinfoRunnable = new Runnable() {
 
 		public void run() {

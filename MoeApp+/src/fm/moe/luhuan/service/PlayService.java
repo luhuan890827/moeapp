@@ -20,9 +20,11 @@ import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
+import android.media.MediaPlayer.OnInfoListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat.Builder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -34,10 +36,12 @@ public class PlayService extends Service {
 	public static final String EXTRA_PLAYLIST = "playList";
 	public static final String EXTRA_PLAYLIST_ID = "playListId";
 	public static final String EXTRA_SELECTED_INDEX = "selectedIndex";
+	public static final String EXTRA_SONG_CURRENT_POSITION="current position";
 	public static final String ACTION_PLAYER_STATE_CHANGE = "player state change";
 	public static final String ACTION_START_PLAY = "start play";
 	public static final String ACTION_INIT_LIST = "init list";
 	public static final String ACTION_USER_OPERATE = "user operate";
+	
 	public static final int NOTIFICATION_ID = 1;
 	public static final int PLAYER_PAUSE = -2;
 	public static final int PLAYER_PLAY = -1;
@@ -54,6 +58,7 @@ public class PlayService extends Service {
 	private Intent broadcast = new Intent();
 	private PlayerBinder binder = new PlayerBinder();
 	private Builder notificationBuilder;
+	private Handler mHandler = new Handler();
 	private NotificationManager notificationManager;
 	public ArrayList<SimpleData> playList;
 	public String playListId;
@@ -68,7 +73,7 @@ public class PlayService extends Service {
 		// TODO Auto-generated method stub
 
 		super.onCreate();
-		
+		mHandler.post(isPlayingRunnable);
 		initMediaPlayer();
 		fileHelper = new DataStorageHelper(this);
 		registerReceiver(receiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
@@ -79,6 +84,7 @@ public class PlayService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		String action = intent.getAction();
 		Bundle bundle = intent.getExtras();
+		
 		if (action.equals(ACTION_INIT_LIST)) {
 			
 			playList = (ArrayList<SimpleData>) bundle.get(EXTRA_PLAYLIST);
@@ -102,7 +108,7 @@ public class PlayService extends Service {
 				}
 			}
 		}
-
+		
 		return START_NOT_STICKY;
 	}
 
@@ -143,6 +149,7 @@ public class PlayService extends Service {
 			// fav songµÄÊ±ºòÎªNULL£¿
 			player.setDataSource(url);
 			isPrepared = false;
+			
 		} catch (Exception e) {
 			Log.e("setDataSource err", "", e);
 		}
@@ -158,6 +165,7 @@ public class PlayService extends Service {
 		player.setOnPreparedListener(onPlayerPrepared);
 		player.setOnCompletionListener(onPlayComplete);
 		player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		
 	}
 
 	private void initNotification(Bundle bundle) {
@@ -220,12 +228,21 @@ public class PlayService extends Service {
 			// Log.e("player", "prepare");
 		}
 	};
+	private OnInfoListener onInfo = new OnInfoListener() {
+		
+		public boolean onInfo(MediaPlayer mp, int what, int extra) {
+			// TODO Auto-generated method stub
+			Log.e("media info", "what="+what+",extra="+extra);
+			return false;
+		}
+	};
 	private OnCompletionListener onPlayComplete = new OnCompletionListener() {
 
 		public void onCompletion(MediaPlayer mp) {
 			if (playList.size() - 1 > nowIndex) {
 				playSongAtIndex(++nowIndex);
 			}
+			mHandler.removeCallbacks(isPlayingRunnable);
 			new DoPersistThread().start();
 			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
 			broadcast.putExtra(EXTRA_PLAYER_STATUS, 1);
@@ -244,6 +261,7 @@ public class PlayService extends Service {
 			broadcast.putExtra(EXTRA_PLAYER_STATUS, 2);
 			broadcast.putExtra(EXTRA_PLAYER_BUFFERED_PERCENT, percent);
 			sendBroadcast(broadcast);
+			Log.e("buffered update", percent+"");
 
 		}
 	};
@@ -273,6 +291,17 @@ public class PlayService extends Service {
 			}
 		}
 
+	};
+	private Runnable isPlayingRunnable = new Runnable() {
+		
+		public void run() {
+			
+			//Log.e("currentPosition", player.getCurrentPosition()+"");
+			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
+			broadcast.putExtra(EXTRA_SONG_CURRENT_POSITION, player.getCurrentPosition());
+			sendBroadcast(broadcast);
+			mHandler.postDelayed(isPlayingRunnable, 1000);
+		}
 	};
 
 }
