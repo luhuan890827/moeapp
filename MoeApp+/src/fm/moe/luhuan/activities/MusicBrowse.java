@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
+
 import com.alibaba.fastjson.JSON;
 import fm.moe.luhuan.JSONUtils;
 import fm.moe.luhuan.MoeDbHelper;
@@ -76,7 +79,7 @@ public class MusicBrowse extends Activity {
 		http = new MoeHttp(this);
 		connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 		setViewPager();
-
+		
 	}
 	@Override
 	protected void onStop() {
@@ -93,7 +96,7 @@ public class MusicBrowse extends Activity {
 			MoeDbHelper dbHelper = new MoeDbHelper(this);
 			db = dbHelper.getWritableDatabase();
 			CursorAdapter adapter = (CursorAdapter) vStatus.views.get(2).getAdapter();
-			adapter.changeCursor(db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME,
+			adapter.changeCursor(db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME+" order by insert_time",
 					null));
 			 
 			((CursorAdapter)vStatus.views.get(2).getAdapter()).notifyDataSetChanged();
@@ -208,7 +211,7 @@ public class MusicBrowse extends Activity {
 		MoeDbHelper dbHelper = new MoeDbHelper(this);
 		db = dbHelper.getWritableDatabase();
 
-		 Cursor cursor = db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME,
+		 Cursor cursor = db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME+" order by insert_time",
 				null);
 
 		ListAdapter adapter = new MyCursorAdapter(getApplicationContext(), cursor,

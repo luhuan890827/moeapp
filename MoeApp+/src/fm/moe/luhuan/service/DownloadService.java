@@ -82,10 +82,6 @@ public class DownloadService extends IntentService {
 				.getBoolean(getResources().getString(fm.moe.luhuan.R.string.pref_key_download_only_on_wifi), false);
 
 		connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-		IntentFilter intentFilter = new IntentFilter();
-
-		intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-
 	}
 
 	/*

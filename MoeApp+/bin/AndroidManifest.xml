@@ -37,8 +37,10 @@
         <activity android:name=".activities.AppPref" >
         </activity>
 
-        <service android:name=".service.PlayService" />
+        <service android:name=".service.PlayService" android:process=":playback"/>
         <service android:name=".service.DownloadService" >
+        </service>
+        <service android:name=".service.QueueDownloadService" >
         </service>
     </application>
 
