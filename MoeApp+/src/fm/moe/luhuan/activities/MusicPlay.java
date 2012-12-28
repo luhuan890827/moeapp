@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -20,12 +19,8 @@ import fm.moe.luhuan.service.DownloadService;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.service.QueueDownloadService;
 
-import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -43,6 +38,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
+import android.text.Html;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseArray;
@@ -55,6 +51,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.SearchView;
 import android.widget.SeekBar;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -66,13 +63,13 @@ public class MusicPlay extends Activity {
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("mm:ss");
 	private MoeHttp moeHttp;
 	private CommonHttpHelper commonHttp = new CommonHttpHelper();
-	
+
 	private Handler mHandler = new Handler();
 	private AsyncTask coverTask;
 	private DataStorageHelper fileHelper;
-	// private PlayService musicService;
-	private int nowIndex = 0;
 
+	private int nowIndex = 0;
+	private int currentPosition = 0;
 	private ArrayList<SimpleData> playList;
 	private SparseArray<Bitmap> imageCache = new SparseArray<Bitmap>();
 	private IntentFilter intentFilter = new IntentFilter();
@@ -89,10 +86,10 @@ public class MusicPlay extends Activity {
 	// player flags and info
 	private boolean isPlayerPlaying = false;
 	private boolean isPlayerPrepared = false;
-	private int playedTime = 0;
+	// private int playedTime = 0;
 	private int fullTime = 0;
+
 	// constants
-	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -103,67 +100,49 @@ public class MusicPlay extends Activity {
 		initViews();
 		listView = (ListView) findViewById(R.id.player_list_view);
 		songView = (RelativeLayout) findViewById(R.id.player_song_view);
-		setBackTab();
+		getActionBar().setDisplayHomeAsUpEnabled(true);
 		moeHttp = new MoeHttp(this);
 		fileHelper = new DataStorageHelper(this);
-		Intent incomingIntent = getIntent();
-		connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-		final Bundle bundle = incomingIntent.getExtras();
-
+		intentFilter.addAction(PlayService.ACTION_PLAYER_STATE_CHANGE);
+		intentFilter.addAction(DownloadService.ACTION_DOWNLOAD_STATE_CHANGE);
+		intentFilter.addAction(PlayService.ACTION_SONG_INFO_BROADCAST);
+		intentFilter.addAction(PlayService.ACTION_REQUEST_PLAYLIST_RESET);
 		pref = getSharedPreferences("app_settings", MODE_PRIVATE);
-		NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
-		
-		if (bundle != null) {
-			boolean doNeedNetwork = bundle
-					.getBoolean(PlayService.EXTRA_IF_NEED_NETWORK);
-			boolean playOnlyOnWifi = pref.getBoolean(
-					getResources().getString(
-							R.string.pref_key_play_only_on_wifi), true);
-			boolean isNetworkWifi = true;
-			if (ni != null) {
-				isNetworkWifi = ni.getType() == ConnectivityManager.TYPE_WIFI ? true
-						: false;
 
-			} else {
-				isNetworkWifi = false;
-			}
+		connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+		NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
+
+		Intent incomingIntent = getIntent();
+		final Bundle bundle = incomingIntent.getExtras();
+		String action = incomingIntent.getAction();
+		if (bundle != null) {
 			playList = (ArrayList<SimpleData>) bundle
 					.get(PlayService.EXTRA_PLAYLIST);
-			nowIndex = bundle.getInt(PlayService.EXTRA_SELECTED_INDEX);
-			
-			setStaticView(playList.get(nowIndex));
 			listView.setAdapter(new SimpleDataAdapter(this, playList));
 			listView.setOnItemClickListener(onListViewClick);
-			if (doNeedNetwork && playOnlyOnWifi && !isNetworkWifi) {
-				Builder alertBuilder = new Builder(this);
-				AlertDialog alert = alertBuilder.create();
-				alert.setTitle("可能产生额外流量");
-				alert.setMessage("当前网络为非WIFI网络，继续播放有可能产生额外流量，确定要继续播放吗？");
-				alert.setButton(AlertDialog.BUTTON_NEGATIVE, "确定",
-						positiveClick);
+			nowIndex = 0;
+			setStaticView();
+			if (action == null) {
+				nowIndex = bundle.getInt(PlayService.EXTRA_SELECTED_INDEX);
+
+				Intent serviceIntent = new Intent(this, PlayService.class);
+				serviceIntent.putExtras(bundle);
+				serviceIntent.setAction(PlayService.ACTION_START_PLAY);
+				startService(serviceIntent);
 			}
-
-			Intent serviceIntent = new Intent(this, PlayService.class);
-			serviceIntent.putExtras(bundle);
-			serviceIntent.setAction(PlayService.ACTION_INIT_LIST);
-			startService(serviceIntent);
-
-			serviceIntent.setAction(PlayService.ACTION_START_PLAY);
-			startService(serviceIntent);
 
 		}
 
 	}
 
 	@Override
-	protected void onResume() {
-		super.onResume();
-		
-		intentFilter.addAction(PlayService.ACTION_PLAYER_STATE_CHANGE);
-		intentFilter.addAction(DownloadService.ACTION_DOWNLOAD_STATE_CHANGE);
-		registerReceiver(broadcastReceiver, intentFilter);
-		
+	protected void onStart() {
 
+		super.onStart();
+
+		registerReceiver(broadcastReceiver, intentFilter);
+		mHandler.postDelayed(setStaticViewRunnable, 100);
+		mHandler.postDelayed(setStaticViewRunnable, 1000);
 	}
 
 	@Override
@@ -188,23 +167,20 @@ public class MusicPlay extends Activity {
 
 	@Override
 	public void onBackPressed() {
-		// TODO Auto-generated method stub
 		Intent intent = new Intent(this, MusicBrowse.class);
 		startActivity(intent);
 		super.onBackPressed();
 
 	}
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private void setBackTab() {
-		ActionBar actionBar = getActionBar();
-		actionBar.setDisplayHomeAsUpEnabled(true);
+	@Override
+	public boolean onSearchRequested() {
+		startSearch(null, false, null, false);
 
+		return true;
 	}
 
 	private void initViews() {
-		
-		
 		texts.bindView();
 		buttons.bindView();
 		seekBar = (SeekBar) findViewById(R.id.playing_seekbar);
@@ -215,14 +191,16 @@ public class MusicPlay extends Activity {
 
 		albumCover.setLayoutParams(new RelativeLayout.LayoutParams(
 				LayoutParams.MATCH_PARENT, dm.widthPixels));
-		
+
 	}
 
-	private void setStaticView(SimpleData item) {
-
+	private void setStaticView() {
+		SimpleData item = playList.get(nowIndex);
+		getActionBar().setTitle(
+				"正在播放:" + (nowIndex + 1) + "/" + playList.size());
 		// Log.e("parent id", currentItem.getParentId() + "");
-		texts.title.setText(item.getTitle());
-		texts.artist.setText(item.getArtist());
+		texts.title.setText(Html.fromHtml(item.getTitle()));
+		
 		if (item.isFav()) {
 			buttons.fav.setImageDrawable(getResources().getDrawable(
 					android.R.drawable.btn_star_big_on));
@@ -233,8 +211,17 @@ public class MusicPlay extends Activity {
 		if (item.getArtist() == null || item.getArtist().equals("")) {
 			texts.artist.setText("未知艺术家");
 		}
+		if (isPlayerPlaying) {
+			buttons.pp.setImageDrawable(getResources().getDrawable(
+					android.R.drawable.ic_media_pause));
 
+		} else {
+			buttons.pp.setImageDrawable(getResources().getDrawable(
+					android.R.drawable.ic_media_play));
+		}
+		texts.fullTime.setText(dateFormat.format(fullTime));
 		texts.album.setText(item.getParentTitle());
+
 		loadCover(item.getAlbumnCoverUrl());
 
 	}
@@ -247,10 +234,8 @@ public class MusicPlay extends Activity {
 		isPlayerPlaying = false;
 		isPlayerPrepared = false;
 		fullTime = 0;
-		playedTime = 0;
 		nowIndex = targetIndex;
 		startService(changeSongIntent);
-		
 		mHandler.post(setStaticViewRunnable);
 	}
 
@@ -267,7 +252,8 @@ public class MusicPlay extends Activity {
 
 				@Override
 				protected Bitmap doInBackground(Object... params) {
-					Bitmap bm = fileHelper.getItemCoverBitmap(playList.get(nowIndex));
+					Bitmap bm = fileHelper.getItemCoverBitmap(playList
+							.get(nowIndex));
 					// Log.e("loading bitmap", albumnCoverUrl);
 					if (bm == null) {
 						bm = commonHttp.getBitmap(albumnCoverUrl);
@@ -404,7 +390,8 @@ public class MusicPlay extends Activity {
 						if (!JSON.parseObject(json).getJSONObject("response")
 								.getJSONObject("information")
 								.getBoolean("has_error")) {
-							playList.get(nowIndex).setFav(!playList.get(nowIndex).isFav());
+							playList.get(nowIndex).setFav(
+									!playList.get(nowIndex).isFav());
 							fileHelper.updateFav(playList.get(nowIndex));
 							mHandler.post(new Runnable() {
 
@@ -450,13 +437,11 @@ public class MusicPlay extends Activity {
 				Uri uri = Uri.fromFile(new File(imageUrl));
 				shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
 				shareIntent.setType("image/jpeg");
-				shareIntent
-						.putExtra(
-								Intent.EXTRA_TEXT,
-								"http://moe.fm/listen?song="
-										+ playList.get(nowIndex).getId()
-										+ "  ,分享一首来自@萌否网 的歌曲,"
-										+ playList.get(nowIndex).getTitle());
+				shareIntent.putExtra(Intent.EXTRA_TEXT,
+						"http://moe.fm/listen?song="
+								+ playList.get(nowIndex).getId()
+								+ "  ,分享一首来自@萌否网 的歌曲,"
+								+ playList.get(nowIndex).getTitle());
 			} catch (IOException e) {
 				Log.e("", "", e);
 				e.printStackTrace();
@@ -485,10 +470,9 @@ public class MusicPlay extends Activity {
 					} else if (tarIndex > playList.size() - 1) {
 						tarIndex = playList.size() - 1;
 					}
-					
+
 					sendChangeSongIntent(tarIndex);
-					
-					
+
 					mHandler.post(resetTimeinfoRunnable);
 					clickCount = 0;
 
@@ -505,13 +489,12 @@ public class MusicPlay extends Activity {
 			if (isPlayerPlaying) {
 				ppIntent.putExtra(PlayService.EXTRA_SWITCH_PLAY_OR_PAUSE,
 						PlayService.PLAYER_PAUSE);
-				
 
 				((ImageButton) v).setImageDrawable(getResources().getDrawable(
 						android.R.drawable.ic_media_play));
 				isPlayerPlaying = false;
 			} else if (isPlayerPrepared) {
-				
+
 				ppIntent.putExtra(PlayService.EXTRA_SWITCH_PLAY_OR_PAUSE,
 						PlayService.PLAYER_PLAY);
 
@@ -519,6 +502,7 @@ public class MusicPlay extends Activity {
 						android.R.drawable.ic_media_pause));
 				isPlayerPlaying = true;
 			}
+			ppIntent.putExtra("", "");
 			startService(ppIntent);
 		}
 
@@ -542,13 +526,54 @@ public class MusicPlay extends Activity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
-			// Log.e("action", action);
+
 			if (action.equals(PlayService.ACTION_PLAYER_STATE_CHANGE)) {
 				onPlayerStateChange(intent);
 			}
 
 			if (action.equals(DownloadService.ACTION_DOWNLOAD_STATE_CHANGE)) {
 				onDownloadStateChange(intent);
+			}
+			if (action.equals(PlayService.ACTION_SONG_INFO_BROADCAST)) {
+				currentPosition = intent.getIntExtra(
+						PlayService.EXTRA_SONG_CURRENT_POSITION, 0);
+				int temp = intent.getIntExtra(
+						PlayService.EXTRA_NOW_PLAYING_INDEX, 0);
+				if (temp > 0) {
+					nowIndex = temp;
+
+				}
+				// Log.e("", "!"+currentPosition);
+				isPlayerPlaying = intent.getBooleanExtra(
+						PlayService.EXTRA_IS_PLAYER_PLAYING, false);
+				isPlayerPrepared = intent.getBooleanExtra(
+						PlayService.EXTRA_IS_PLAYER_PREPARED, false);
+				fullTime = intent.getIntExtra(PlayService.EXTRA_SONG_DURATION,
+						1);
+				if (currentPosition > 0) {
+					if (isPlayerPlaying) {
+						texts.played
+								.setText(dateFormat.format(currentPosition));
+						if (!seekBar.isPressed()) {
+							seekBar.setProgress(currentPosition * 100
+									/ fullTime);
+						}
+						// playedTime += 1000;
+					}
+				}
+			}
+			if (action.equals(PlayService.ACTION_REQUEST_PLAYLIST_RESET)) {
+				Intent resetIntent = new Intent(PlayService.ACTION_START_PLAY);
+				resetIntent
+						.setClass(getApplicationContext(), PlayService.class);
+				resetIntent.putExtras(getIntent().getExtras());
+				resetIntent.putExtra(PlayService.EXTRA_SONG_CURRENT_POSITION,
+						currentPosition);
+				resetIntent
+						.putExtra(PlayService.EXTRA_SELECTED_INDEX, nowIndex);
+				Log.e("now index", nowIndex + "");
+				startService(resetIntent);
+
 			}
 
 		}
@@ -561,8 +586,8 @@ public class MusicPlay extends Activity {
 				break;
 			case 1:
 				Toast.makeText(MusicPlay.this,
-						playList.get(nowIndex).getTitle() + "下载已完成", Toast.LENGTH_SHORT)
-						.show();
+						playList.get(nowIndex).getTitle() + "下载已完成",
+						Toast.LENGTH_SHORT).show();
 				break;
 			case -1:
 				String info = intent
@@ -577,52 +602,35 @@ public class MusicPlay extends Activity {
 		}
 
 		private void onPlayerStateChange(Intent intent) {
-			
-			int currentPosition = intent.getIntExtra(PlayService.EXTRA_SONG_CURRENT_POSITION, 0);
-			//Log.e("", "!"+currentPosition);
-			if(currentPosition>0){
-				if (isPlayerPlaying) {
-					texts.played.setText(dateFormat.format(currentPosition));
-					if (!seekBar.isPressed()) {
-						seekBar.setProgress(currentPosition * 100 / fullTime);
-					}
-					//playedTime += 1000;
-				}
-			}
+
 			switch (intent.getIntExtra(PlayService.EXTRA_PLAYER_STATUS, 0)) {
 			case 0:// for prepared
 				buttons.pp.setImageDrawable(getResources().getDrawable(
 						android.R.drawable.ic_media_pause));
 				isPlayerPrepared = true;
 				isPlayerPlaying = true;
-				fullTime = intent.getIntExtra(
-						PlayService.EXTRA_SONG_DURATION, 1);
-				
+				fullTime = intent.getIntExtra(PlayService.EXTRA_SONG_DURATION,
+						1);
+
 				texts.fullTime.setText(dateFormat.format(fullTime));
-				
-				
+
 				break;
 			case 1:// for completion
 				nowIndex = intent.getIntExtra(
 						PlayService.EXTRA_NOW_PLAYING_INDEX, 0);
-				
-				
-				
+
 				if ((playList.size() - 1 != intent.getIntExtra(
 						PlayService.EXTRA_NOW_PLAYING_INDEX, 0))) {
 					mHandler.post(resetTimeinfoRunnable);
 					isPlayerPrepared = false;
 					isPlayerPlaying = false;
 					fullTime = 0;
-					playedTime = 0;
-					setStaticView(playList.get(nowIndex));
-				}else{
-					playedTime = 0;
+					setStaticView();
+				} else {
 					isPlayerPlaying = false;
-					setStaticView(playList.get(nowIndex));
+					setStaticView();
 				}
-				
-				
+
 				break;
 			case 2:// for buffer update
 				seekBar.setSecondaryProgress(intent.getIntExtra(
@@ -639,7 +647,7 @@ public class MusicPlay extends Activity {
 
 		public void run() {
 
-			setStaticView(playList.get(nowIndex));
+			setStaticView();
 		}
 	};
 
@@ -661,7 +669,6 @@ public class MusicPlay extends Activity {
 				seekIntent.setAction(PlayService.ACTION_USER_OPERATE);
 				seekIntent.putExtra(PlayService.EXTRA_SEEK_TO,
 						seekBar.getProgress() * fullTime / 100);
-				playedTime = seekBar.getProgress() * fullTime / 100;
 				startService(seekIntent);
 			}
 		}

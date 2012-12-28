@@ -2,11 +2,11 @@ package fm.moe.luhuan.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Currency;
 
 import fm.moe.luhuan.DataStorageHelper;
 import fm.moe.luhuan.activities.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
-
 import android.R;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -20,14 +20,12 @@ import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
-import android.media.MediaPlayer.OnInfoListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat.Builder;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 public class PlayService extends Service {
@@ -36,12 +34,13 @@ public class PlayService extends Service {
 	public static final String EXTRA_PLAYLIST = "playList";
 	public static final String EXTRA_PLAYLIST_ID = "playListId";
 	public static final String EXTRA_SELECTED_INDEX = "selectedIndex";
-	public static final String EXTRA_SONG_CURRENT_POSITION="current position";
+	public static final String EXTRA_SONG_CURRENT_POSITION = "current position";
 	public static final String ACTION_PLAYER_STATE_CHANGE = "player state change";
 	public static final String ACTION_START_PLAY = "start play";
-	public static final String ACTION_INIT_LIST = "init list";
+	//public static final String ACTION_INIT_LIST = "init list";
 	public static final String ACTION_USER_OPERATE = "user operate";
-	
+	public static final String ACTION_SONG_INFO_BROADCAST = "song info";
+	public static final String ACTION_REQUEST_PLAYLIST_RESET = "reset playlist";
 	public static final int NOTIFICATION_ID = 1;
 	public static final int PLAYER_PAUSE = -2;
 	public static final int PLAYER_PLAY = -1;
@@ -50,11 +49,12 @@ public class PlayService extends Service {
 	public static final String EXTRA_PLAYER_BUFFERED_PERCENT = "buffered percent";
 	public static final String EXTRA_TARGET_SONG_INDEX = "target index";
 	public static final String EXTRA_SONG_DURATION = "song duration";
-	public  static final String EXTRA_NOW_PLAYING_INDEX = "now playing index";
+	public static final String EXTRA_NOW_PLAYING_INDEX = "now playing index";
 	public static final String EXTRA_SWITCH_PLAY_OR_PAUSE = "play or pause";
 	public static final String EXTRA_SEEK_TO = "seek to";
-
-	//private LocalBroadcastManager broadcastManager;
+	public static final String EXTRA_IS_PLAYER_PLAYING = "is playing?";
+	public static final String EXTRA_IS_PLAYER_PREPARED="is prepared?";
+	// private LocalBroadcastManager broadcastManager;
 	private Intent broadcast = new Intent();
 	private PlayerBinder binder = new PlayerBinder();
 	private Builder notificationBuilder;
@@ -67,14 +67,20 @@ public class PlayService extends Service {
 	public DataStorageHelper fileHelper;
 	public boolean isPrepared = false;
 	public int bufferedPercent = 0;
-	
+
 	@Override
 	public void onCreate() {
-		// TODO Auto-generated method stub
-
+		
 		super.onCreate();
-		mHandler.post(isPlayingRunnable);
+		
+		mHandler.post(playerInfoBroadcastRunnable);
 		initMediaPlayer();
+		
+
+		notificationBuilder = new Builder(this);
+		
+		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		
 		fileHelper = new DataStorageHelper(this);
 		registerReceiver(receiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
 		// Log.e("service", "oncreate");
@@ -82,39 +88,54 @@ public class PlayService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		String action = intent.getAction();
-		Bundle bundle = intent.getExtras();
 		
-		if (action.equals(ACTION_INIT_LIST)) {
+			String action = intent.getAction();
+			Bundle bundle = intent.getExtras();
+			//stopSelf();
+			if (action.equals(ACTION_START_PLAY)) {
+
+				playList = (ArrayList<SimpleData>) bundle.get(EXTRA_PLAYLIST);
+				nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
+				Intent resumePlayActivity = new Intent(this, MusicPlay.class);
+				resumePlayActivity.setAction("123");
+				resumePlayActivity.putExtras(bundle);
+				resumePlayActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+				PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+						resumePlayActivity, PendingIntent.FLAG_UPDATE_CURRENT);
+				notificationBuilder.setContentIntent(pendingIntent);
+				nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
+				playSongAtIndex(nowIndex);
 			
-			playList = (ArrayList<SimpleData>) bundle.get(EXTRA_PLAYLIST);
-			nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
-		} else if (action.equals(ACTION_START_PLAY)) {
-			initNotification(bundle);
-			nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
-			playSongAtIndex(nowIndex);
-		}else if(action.equals(ACTION_USER_OPERATE)){
-			if(bundle.containsKey(EXTRA_TARGET_SONG_INDEX)){
-				playSongAtIndex(bundle.getInt(EXTRA_TARGET_SONG_INDEX));
-			}
-			if(bundle.containsKey(EXTRA_SEEK_TO)){
-				player.seekTo(bundle.getInt(EXTRA_SEEK_TO));
-			}
-			if(bundle.containsKey(EXTRA_SWITCH_PLAY_OR_PAUSE)){
-				if(bundle.getInt(EXTRA_SWITCH_PLAY_OR_PAUSE)==PLAYER_PAUSE){
-					player.pause();
-				}else{
-					player.start();
+			} else if (action.equals(ACTION_USER_OPERATE)) {
+				if (bundle.containsKey(EXTRA_TARGET_SONG_INDEX)) {
+					playSongAtIndex(bundle.getInt(EXTRA_TARGET_SONG_INDEX));
+				}
+				if (bundle.containsKey(EXTRA_SEEK_TO)) {
+					player.seekTo(bundle.getInt(EXTRA_SEEK_TO));
+				}
+				if (bundle.containsKey(EXTRA_SWITCH_PLAY_OR_PAUSE)) {
+					
+					if (bundle.getInt(EXTRA_SWITCH_PLAY_OR_PAUSE) == PLAYER_PAUSE) {
+						notificationBuilder.setAutoCancel(true);
+						notificationBuilder.setOngoing(false);
+						player.pause();
+						sendNotification(R.drawable.ic_media_pause, null, "²¥·ÅÒÑÔÝÍ£", playList.get(nowIndex).getTitle());
+					} else {
+						notificationBuilder.setAutoCancel(false);
+						notificationBuilder.setOngoing(true);
+						player.start();
+						sendNotification(R.drawable.ic_media_play, null, "ÕýÔÚ²¥·Å", playList.get(nowIndex).getTitle());
+					}
 				}
 			}
-		}
 		
-		return START_NOT_STICKY;
+		
+			//pending intent£¿
+		return START_STICKY;
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		// TODO Auto-generated method stub
 		Log.e("service", "onbind");
 
 		return binder;
@@ -122,34 +143,37 @@ public class PlayService extends Service {
 
 	@Override
 	public boolean onUnbind(Intent intent) {
-		// TODO Auto-generated method stub
 		return super.onUnbind(intent);
 
 	}
 
 	@Override
 	public void onDestroy() {
-		// TODO Auto-generated method stub
 		super.onDestroy();
 		notificationManager.cancelAll();
 		player.release();
 		unregisterReceiver(receiver);
+		mHandler.removeCallbacks(playerInfoBroadcastRunnable);
 	}
 
 	public void playSongAtIndex(int n) {
-		// TODO Auto-generated method stub
 
 		player.reset();
+		//Log.e("playlist", playList+"");
+		String url = "";
+		try{
+			url = fileHelper.getItemMp3Url(playList.get(n));
+		}catch(Exception e){
+			broadcast.setAction(ACTION_REQUEST_PLAYLIST_RESET);
+			sendBroadcast(broadcast);
+		}
+		
 
-		String url = fileHelper.getItemMp3Url(playList.get(n));
-
-		// Uri uri = Uri.parse(url);
-		// why block here????
 		try {
 			// fav songµÄÊ±ºòÎªNULL£¿
 			player.setDataSource(url);
 			isPrepared = false;
-			
+
 		} catch (Exception e) {
 			Log.e("setDataSource err", "", e);
 		}
@@ -165,27 +189,16 @@ public class PlayService extends Service {
 		player.setOnPreparedListener(onPlayerPrepared);
 		player.setOnCompletionListener(onPlayComplete);
 		player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		
-	}
 
-	private void initNotification(Bundle bundle) {
-		Intent resumePlayActivity = new Intent(this, MusicPlay.class);
-		resumePlayActivity.putExtras(bundle);
-		resumePlayActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-
-		notificationBuilder = new Builder(this);
-		
-		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
-				resumePlayActivity, PendingIntent.FLAG_UPDATE_CURRENT);
-		notificationBuilder.setContentIntent(pendingIntent);
 	}
 
 	public void sendNotification(int drawableId, String tickerText,
 			String title, String content) {
 		notificationBuilder.setSmallIcon(drawableId);
-		notificationBuilder.setTicker("ÃÈ·ñÒôÀÖ:" + tickerText);
+		if(tickerText!=null){
+			notificationBuilder.setTicker("ÃÈ·ñÒôÀÖ:" + tickerText);	
+		}
+		
 		notificationBuilder.setContentTitle("ÃÈ·ñÒôÀÖ:" + title);
 		notificationBuilder.setContentText(content);
 		notificationManager
@@ -201,13 +214,8 @@ public class PlayService extends Service {
 	private OnErrorListener onPlayerErr = new OnErrorListener() {
 
 		public boolean onError(MediaPlayer mp, int what, int extra) {
-			// TODO Auto-generated method stub
-			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
-			broadcast.putExtra(EXTRA_PLAYER_STATUS, -1);
+			broadcast.setAction(ACTION_REQUEST_PLAYLIST_RESET);
 			sendBroadcast(broadcast);
-			sendNotification(R.drawable.stat_notify_error, "²¥·ÅÒÑÖÕÖ¹", "²¥·ÅÒÑÖÕÖ¹",
-					"²¥·ÅÆ÷³ö´í");
-			player.reset();
 			// Log.e("broadcast", "send");
 			return true;
 		}
@@ -218,6 +226,7 @@ public class PlayService extends Service {
 			isPrepared = true;
 			bufferedPercent = 100;
 			mp.start();
+			notificationBuilder.setOngoing(true);
 			sendNotification(R.drawable.ic_media_play, playList.get(nowIndex)
 					.getTitle(), "ÕýÔÚ²¥·Å", playList.get(nowIndex).getTitle());
 			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
@@ -228,21 +237,14 @@ public class PlayService extends Service {
 			// Log.e("player", "prepare");
 		}
 	};
-	private OnInfoListener onInfo = new OnInfoListener() {
-		
-		public boolean onInfo(MediaPlayer mp, int what, int extra) {
-			// TODO Auto-generated method stub
-			Log.e("media info", "what="+what+",extra="+extra);
-			return false;
-		}
-	};
+	
 	private OnCompletionListener onPlayComplete = new OnCompletionListener() {
 
 		public void onCompletion(MediaPlayer mp) {
 			if (playList.size() - 1 > nowIndex) {
 				playSongAtIndex(++nowIndex);
 			}
-			mHandler.removeCallbacks(isPlayingRunnable);
+
 			new DoPersistThread().start();
 			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
 			broadcast.putExtra(EXTRA_PLAYER_STATUS, 1);
@@ -261,7 +263,7 @@ public class PlayService extends Service {
 			broadcast.putExtra(EXTRA_PLAYER_STATUS, 2);
 			broadcast.putExtra(EXTRA_PLAYER_BUFFERED_PERCENT, percent);
 			sendBroadcast(broadcast);
-			Log.e("buffered update", percent+"");
+			Log.e("buffered update", percent + "");
 
 		}
 	};
@@ -286,21 +288,28 @@ public class PlayService extends Service {
 			try {
 				fileHelper.persistState(playList, nowIndex);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 
 	};
-	private Runnable isPlayingRunnable = new Runnable() {
-		
+
+	private Runnable playerInfoBroadcastRunnable = new Runnable() {
+
 		public void run() {
-			
-			//Log.e("currentPosition", player.getCurrentPosition()+"");
-			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
-			broadcast.putExtra(EXTRA_SONG_CURRENT_POSITION, player.getCurrentPosition());
+
+			// Log.e("currentPosition", player.getCurrentPosition()+"");
+			broadcast.setAction(ACTION_SONG_INFO_BROADCAST);
+			broadcast.putExtra(EXTRA_SONG_CURRENT_POSITION,
+					player.getCurrentPosition());
+			broadcast.putExtra(EXTRA_NOW_PLAYING_INDEX, nowIndex);
+			broadcast.putExtra(EXTRA_IS_PLAYER_PLAYING, player.isPlaying());
+			broadcast.putExtra(EXTRA_IS_PLAYER_PREPARED	, isPrepared);
+			if(isPrepared){
+				broadcast.putExtra(EXTRA_SONG_DURATION, player.getDuration());
+			}
 			sendBroadcast(broadcast);
-			mHandler.postDelayed(isPlayingRunnable, 1000);
+			mHandler.postDelayed(playerInfoBroadcastRunnable, 500);
 		}
 	};
 

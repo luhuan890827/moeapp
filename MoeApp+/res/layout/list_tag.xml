@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:orientation="vertical" 
+    android:background="@drawable/list_header_line"
+    >
+    
+<TextView
+    android:id="@+id/list_tag_text"
+    android:textColor="@android:color/black"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:textSize="25sp"
+    android:gravity="center_vertical" 
+    
+    android:layout_marginLeft="14dp"
+    
+    />
+
+</LinearLayout>

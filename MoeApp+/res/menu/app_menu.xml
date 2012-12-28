@@ -5,5 +5,4 @@
         android:icon="@android:drawable/ic_menu_preferences"
         android:id="@+id/to_app_pref"
         />
-
 </menu>

@@ -21,6 +21,24 @@ public class SimpleDataAdapter extends BaseAdapter {
 	private List<SimpleData> data;
 	private LayoutInflater inflater;
 
+	private void setDetail(View v, SimpleData item) {
+		TextView tag = (TextView) v.findViewById(R.id.item_description);
+		TextView title = (TextView) v.findViewById(R.id.item_title);
+		String tagText = item.getArtist();
+		if (tagText == null || tagText.equals("")) {
+			tagText = item.getDescription();
+			if (tagText == null || tagText.equals("")) {
+				tagText = "未知艺术家";
+			}
+		}
+		v.setTag(R.string.item_id, item.getId());
+		title.setText(Html.fromHtml(item.getTitle()));
+		if(item.getId()!=-1){
+			tag.setText(Html.fromHtml(tagText));
+		}
+		
+	}
+
 	public SimpleDataAdapter(Context c, List<SimpleData> l) {
 
 		data = l;
@@ -43,40 +61,37 @@ public class SimpleDataAdapter extends BaseAdapter {
 	}
 
 	public View getView(int position, View convertView, ViewGroup parent) {
-		// TODO Auto-generated method stub
-		LinearLayout ll = (LinearLayout) inflater.inflate(
-				R.layout.simple_list_item, null);
-		//Log.e("class", data.get(position).getClass().toString());
-		
-		
 		SimpleData item = data.get(position);
-
-		TextView tag = (TextView) ll.findViewById(R.id.item_description);
-		TextView title = (TextView) ll.findViewById(R.id.item_title);
-//		Log.e("id", item.getId()+"");
-//		Log.e("title", item.getTitle()+"");
-		String tagText = item.getArtist();
-		if(tagText==null||tagText.equals("")){
-			tagText=item.getDescription();
-			if(tagText==null||tagText.equals("")){
-				tagText="未知艺术家";
+		if (convertView == null||item.getId()==-1) {
+			LinearLayout ll = (LinearLayout) inflater.inflate(
+					R.layout.simple_list_item, null);
+			setDetail(ll, item);
+			return ll;
+		} else {
+			if ((Integer) convertView.getTag(R.string.item_id) != item.getId()) {
+				setDetail(convertView, item);
 			}
+			return convertView;
 		}
-		ll.setTag(R.string.item_id,item.getId());
-//		ll.setTag(R.string.item_description,item.getDescription());
-//		ll.setTag(R.string.item_fav,item.isFav());
-//		if(item.getMp3Url()!=null){
-//			//Log.e("in adapter","mp3 url = " +item.getMp3Url());
-//			ll.setTag(R.string.item_mp3_url,item.getMp3Url());
-//		}
-//		if(item.getParentId()!=-1){
-//			ll.setTag(R.string.song_parent_id,item.getId());
-//		}
-		title.setText(Html.fromHtml(item.getTitle()));
-		tag.setText(Html.fromHtml(tagText));
-		return ll;
+
 	}
-	public List<SimpleData> getData(){
+
+	@Override
+	public boolean areAllItemsEnabled() {
+		return false;
+	}
+
+	@Override
+	public boolean isEnabled(int position) {
+		SimpleData item = data.get(position);
+		if (item.getId() == -1) {
+			return false;
+		}
+		return true;
+
+	}
+
+	public List<SimpleData> getData() {
 		return data;
 	}
 

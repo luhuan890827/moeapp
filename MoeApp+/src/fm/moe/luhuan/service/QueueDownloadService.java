@@ -60,7 +60,9 @@ public class QueueDownloadService extends Service {
 		// TODO Auto-generated method stub
 		super.onCreate();
 		fileHelper = new DataStorageHelper(this);
-
+		notificationBuilder = new Builder(this);
+		notificationBuilder.setAutoCancel(true);
+		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		
 		// to be change
 		onlyByWifi = getSharedPreferences("App_settings", MODE_PRIVATE)
@@ -89,8 +91,13 @@ public class QueueDownloadService extends Service {
 			addTask(item);
 			addTasks(list);
 			startTasks();
-			initNotification(intent.getExtras());
 
+			Intent resumePlayActivity = new Intent(this, MusicPlay.class);
+			resumePlayActivity.putExtras(intent.getExtras());
+			resumePlayActivity.setAction("resume");
+			PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+					resumePlayActivity, PendingIntent.FLAG_UPDATE_CURRENT);
+			notificationBuilder.setContentIntent(pendingIntent);
 		}
 		return START_NOT_STICKY;
 	}
@@ -119,16 +126,9 @@ public class QueueDownloadService extends Service {
 		executor.execute(task);
 	}
 
-	private void initNotification(Bundle bundle) {
-		notificationBuilder = new Builder(this);
-		
-		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		Intent resumePlayActivity = new Intent(this, MusicPlay.class);
-		resumePlayActivity.putExtras(bundle);
-		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
-				resumePlayActivity, PendingIntent.FLAG_UPDATE_CURRENT);
-		notificationBuilder.setContentIntent(pendingIntent);
-	}
+//	private void initNotification(Bundle bundle) {
+
+//	}
 
 	private void sendBroadcast(String action, Bundle extras) {
 		Intent intent = new Intent();
@@ -250,7 +250,6 @@ public class QueueDownloadService extends Service {
 			try {
 				bao.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 

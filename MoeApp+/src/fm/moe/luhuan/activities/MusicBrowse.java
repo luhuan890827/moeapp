@@ -18,6 +18,7 @@ import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.MoeHttp;
 import fm.moe.luhuan.service.PlayService;
 import android.app.Activity;
+import android.app.SearchManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -44,6 +45,7 @@ import android.widget.HeaderViewListAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,7 +58,7 @@ public class MusicBrowse extends Activity {
 	private MoeHttp http;
 	private ConnectivityManager connectivityManager;
 	private SQLiteDatabase db;
-	
+	private SearchView sv;
 	// private Object lock = new Object();
 
 	@Override
@@ -141,6 +143,13 @@ public class MusicBrowse extends Activity {
 		}
 		return super.onMenuItemSelected(featureId, item);
 	}
+	@Override
+	public boolean onSearchRequested() {
+		startSearch(null, false, null, false);
+		
+		return true;
+	}
+	
 	private void backView() {
 		
 		Stack<AdapterDataSet> stack = vStatus.adapterDatas[mViewPager
@@ -213,7 +222,7 @@ public class MusicBrowse extends Activity {
 
 		 Cursor cursor = db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME+" order by insert_time",
 				null);
-
+		 
 		ListAdapter adapter = new MyCursorAdapter(getApplicationContext(), cursor,
 				false);
 		// 使用cursoradapter勿调用cursor.close();
@@ -720,6 +729,7 @@ private OnItemClickListener onLocalItemClick = new OnItemClickListener() {
 			SimpleDataAdapter adapter = (SimpleDataAdapter) hAdapter
 					.getWrappedAdapter();
 			if(result[0]!=null){
+				
 				adapter.getData().addAll((List<SimpleData>) result[0]);
 				adapter.notifyDataSetChanged();
 			}
