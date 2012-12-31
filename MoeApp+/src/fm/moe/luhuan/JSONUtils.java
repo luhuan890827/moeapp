@@ -142,14 +142,18 @@ public class JSONUtils {
 
 	public static List<SimpleData> getSublist(String json) {
 		List<SimpleData> l = new ArrayList<SimpleData>();
+		
 		JSONArray arr = JSON.parseObject(json).getJSONObject("response").getJSONArray("subs");
-		for(int i = 0;i<arr.size();i++){
-			SimpleData data = getSub(arr.getJSONObject(i));
-			if(data!=null){
-				l.add(data);
+		if(arr!=null){
+			for(int i = 0;i<arr.size();i++){
+				SimpleData data = getSub(arr.getJSONObject(i));
+				if(data!=null){
+					l.add(data);
+				}
+				
 			}
-			
 		}
+		
 		return l;
 	}
 	

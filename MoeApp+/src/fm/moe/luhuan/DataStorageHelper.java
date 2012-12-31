@@ -61,11 +61,13 @@ public class DataStorageHelper {
 		}else{
 			url = item.getMp3Url();
 		}
+		db.close();
 		return url;
 	}
 	public boolean isItemSaved(SimpleData item){
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		Cursor c = db.rawQuery("select media_path from "+MoeDbHelper.TABLE_NAME+" where _id="+item.getId(), null);
+		
 		return c.getCount()>0;
 	}
 	public void insertItemIntoDb(SimpleData item){

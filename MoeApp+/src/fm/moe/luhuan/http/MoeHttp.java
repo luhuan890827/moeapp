@@ -2,6 +2,7 @@ package fm.moe.luhuan.http;
 
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.scribe.builder.ServiceBuilder;
 import org.scribe.model.OAuthRequest;
@@ -48,7 +49,7 @@ public class MoeHttp {
 		return ss;
 	}
 
-	public String oauthRequest(String url) {
+	public String oauthRequest(String url)throws Exception {
 		Log.e("url", url);
 		if (token != null && !token.isEmpty()) {
 			OAuthRequest req = new OAuthRequest(Verb.GET, url);

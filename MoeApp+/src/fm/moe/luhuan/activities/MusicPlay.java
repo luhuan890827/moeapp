@@ -18,8 +18,6 @@ import fm.moe.luhuan.http.MoeHttp;
 import fm.moe.luhuan.service.DownloadService;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.service.QueueDownloadService;
-
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -34,7 +32,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
@@ -51,7 +48,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
-import android.widget.SearchView;
 import android.widget.SeekBar;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -200,7 +196,7 @@ public class MusicPlay extends Activity {
 				"正在播放:" + (nowIndex + 1) + "/" + playList.size());
 		// Log.e("parent id", currentItem.getParentId() + "");
 		texts.title.setText(Html.fromHtml(item.getTitle()));
-		
+
 		if (item.isFav()) {
 			buttons.fav.setImageDrawable(getResources().getDrawable(
 					android.R.drawable.btn_star_big_on));
@@ -210,6 +206,8 @@ public class MusicPlay extends Activity {
 		}
 		if (item.getArtist() == null || item.getArtist().equals("")) {
 			texts.artist.setText("未知艺术家");
+		}else{
+			texts.artist.setText(item.getArtist());
 		}
 		if (isPlayerPlaying) {
 			buttons.pp.setImageDrawable(getResources().getDrawable(
@@ -292,6 +290,8 @@ public class MusicPlay extends Activity {
 			fullTime = (TextView) findViewById(R.id.time_full);
 			artist.getPaint().setUnderlineText(true);
 			album.getPaint().setUnderlineText(true);
+			artist.setOnClickListener(onKeywordClick);
+			album.setOnClickListener(onKeywordClick);
 		}
 	}
 
@@ -687,6 +687,25 @@ public class MusicPlay extends Activity {
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
 			sendChangeSongIntent(arg2);
+		}
+	};
+	private OnClickListener onKeywordClick = new OnClickListener() {
+
+		public void onClick(View v) {
+			switch (v.getId()) {
+			case R.id.playing_song_artist:
+				if (!playList.get(nowIndex).getArtist().equals("")) {
+					startSearch(playList.get(nowIndex).getArtist(), false,
+							null, false);
+				}
+				break;
+			case R.id.playing_song_albumn:
+				startSearch(playList.get(nowIndex).getParentTitle(), false,
+						null, false);
+				break;
+			default:
+				break;
+			}
 		}
 	};
 	private DialogInterface.OnClickListener positiveClick = new DialogInterface.OnClickListener() {

@@ -31,11 +31,11 @@ public class SimpleDataAdapter extends BaseAdapter {
 				tagText = "未知艺术家";
 			}
 		}
-		v.setTag(R.string.item_id, item.getId());
+		
 		title.setText(Html.fromHtml(item.getTitle()));
-		if(item.getId()!=-1){
-			tag.setText(Html.fromHtml(tagText));
-		}
+		
+		tag.setText(Html.fromHtml(tagText));
+		v.setTag(R.string.item_id, item.getId());
 		
 	}
 
@@ -62,16 +62,22 @@ public class SimpleDataAdapter extends BaseAdapter {
 
 	public View getView(int position, View convertView, ViewGroup parent) {
 		SimpleData item = data.get(position);
-		if (convertView == null||item.getId()==-1) {
-			LinearLayout ll = (LinearLayout) inflater.inflate(
-					R.layout.simple_list_item, null);
-			setDetail(ll, item);
-			return ll;
-		} else {
-			if ((Integer) convertView.getTag(R.string.item_id) != item.getId()) {
+		if(item.getId()>0){
+			if(convertView!=null&&convertView.getTag()==null){
 				setDetail(convertView, item);
+				return convertView;
+			}else{
+				LinearLayout ll = (LinearLayout) inflater.inflate(
+						R.layout.simple_list_item, null);
+				setDetail(ll, item);
+				return ll;
 			}
-			return convertView;
+		}else{
+			LinearLayout ll = (LinearLayout) inflater.inflate(R.layout.list_tag, null);
+			TextView tag = (TextView) ll.findViewById(R.id.list_tag_text);
+			tag.setText(item.getTitle());
+			ll.setTag(new Object());
+			return ll;
 		}
 
 	}

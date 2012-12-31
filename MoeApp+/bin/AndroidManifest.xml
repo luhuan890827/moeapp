@@ -28,20 +28,39 @@
             android:name=".activities.MusicBrowse"
             android:label="@string/browse"
             android:launchMode="singleInstance" >
+            <meta-data
+                android:name="android.app.default_searchable"
+                android:value=".activities.SearchableActivity" />
         </activity>
         <activity
             android:name=".activities.MusicPlay"
             android:label="正在播放"
-            android:launchMode="singleInstance" >
+            android:launchMode="singleInstance"
+            
+             >
+            <meta-data
+                android:name="android.app.default_searchable"
+                android:value=".activities.SearchableActivity" />
+        </activity>
+        <activity
+            android:name="fm.moe.luhuan.activities.SearchableActivity"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/app_search" />
         </activity>
         <activity android:name=".activities.AppPref" >
         </activity>
 
-        <service android:name=".service.PlayService" android:process=":playback"/>
-        <service android:name=".service.DownloadService" >
-        </service>
-        <service android:name=".service.QueueDownloadService" >
-        </service>
+        <service
+            android:name=".service.PlayService"
+            android:process=":playback" />
+        <service android:name=".service.DownloadService" />
+        <service android:name=".service.QueueDownloadService" />
     </application>
 
 </manifest>

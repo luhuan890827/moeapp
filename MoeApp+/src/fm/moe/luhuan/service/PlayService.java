@@ -2,8 +2,6 @@ package fm.moe.luhuan.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Currency;
-
 import fm.moe.luhuan.DataStorageHelper;
 import fm.moe.luhuan.activities.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
@@ -37,6 +35,7 @@ public class PlayService extends Service {
 	public static final String EXTRA_SONG_CURRENT_POSITION = "current position";
 	public static final String ACTION_PLAYER_STATE_CHANGE = "player state change";
 	public static final String ACTION_START_PLAY = "start play";
+	public static final String ACTION_SET_PLAYLIST = "set play list";
 	//public static final String ACTION_INIT_LIST = "init list";
 	public static final String ACTION_USER_OPERATE = "user operate";
 	public static final String ACTION_SONG_INFO_BROADCAST = "song info";
@@ -60,14 +59,15 @@ public class PlayService extends Service {
 	private Builder notificationBuilder;
 	private Handler mHandler = new Handler();
 	private NotificationManager notificationManager;
-	public ArrayList<SimpleData> playList;
-	public String playListId;
-	public int nowIndex = -1;
-	public MediaPlayer player = new MediaPlayer();
-	public DataStorageHelper fileHelper;
-	public boolean isPrepared = false;
-	public int bufferedPercent = 0;
-
+	private ArrayList<SimpleData> playList;
+	private String playListId;
+	private int nowIndex = -1;
+	private MediaPlayer player = new MediaPlayer();
+	private DataStorageHelper fileHelper;
+	private boolean isPrepared = false;
+	private int bufferedPercent = 0;
+	private boolean autoPlay=true;
+	private int currentPosition = 0;
 	@Override
 	public void onCreate() {
 		
@@ -83,38 +83,42 @@ public class PlayService extends Service {
 		
 		fileHelper = new DataStorageHelper(this);
 		registerReceiver(receiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
+		
 		// Log.e("service", "oncreate");
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		
+			
 			String action = intent.getAction();
 			Bundle bundle = intent.getExtras();
-			//stopSelf();
+			if(action.equals(ACTION_SET_PLAYLIST)){
+				playList = (ArrayList<SimpleData>) bundle.get(EXTRA_PLAYLIST);
+				nowIndex = (Integer) bundle.get(EXTRA_NOW_PLAYING_INDEX);
+				autoPlay = false;
+				currentPosition = intent.getIntExtra(EXTRA_SONG_CURRENT_POSITION, 0);
+				prepareSongAtIndex(nowIndex);
+				setNodificationPending(bundle);
+				
+			}else
 			if (action.equals(ACTION_START_PLAY)) {
 
 				playList = (ArrayList<SimpleData>) bundle.get(EXTRA_PLAYLIST);
 				nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
-				Intent resumePlayActivity = new Intent(this, MusicPlay.class);
-				resumePlayActivity.setAction("123");
-				resumePlayActivity.putExtras(bundle);
-				resumePlayActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-				PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
-						resumePlayActivity, PendingIntent.FLAG_UPDATE_CURRENT);
-				notificationBuilder.setContentIntent(pendingIntent);
+				setNodificationPending(bundle);
 				nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
-				playSongAtIndex(nowIndex);
+				prepareSongAtIndex(nowIndex);
 			
 			} else if (action.equals(ACTION_USER_OPERATE)) {
+				
 				if (bundle.containsKey(EXTRA_TARGET_SONG_INDEX)) {
-					playSongAtIndex(bundle.getInt(EXTRA_TARGET_SONG_INDEX));
+					prepareSongAtIndex(bundle.getInt(EXTRA_TARGET_SONG_INDEX));
 				}
 				if (bundle.containsKey(EXTRA_SEEK_TO)) {
 					player.seekTo(bundle.getInt(EXTRA_SEEK_TO));
 				}
 				if (bundle.containsKey(EXTRA_SWITCH_PLAY_OR_PAUSE)) {
-					
+					autoPlay = true;
 					if (bundle.getInt(EXTRA_SWITCH_PLAY_OR_PAUSE) == PLAYER_PAUSE) {
 						notificationBuilder.setAutoCancel(true);
 						notificationBuilder.setOngoing(false);
@@ -151,12 +155,19 @@ public class PlayService extends Service {
 	public void onDestroy() {
 		super.onDestroy();
 		notificationManager.cancelAll();
+		Intent restartServiceIntent = new Intent(this, PlayService.class);
+		restartServiceIntent.setAction(ACTION_SET_PLAYLIST);
+		restartServiceIntent.putExtra(EXTRA_NOW_PLAYING_INDEX, nowIndex);
+		restartServiceIntent.putExtra(EXTRA_PLAYLIST, playList);
+		restartServiceIntent.putExtra(EXTRA_SONG_CURRENT_POSITION, player.getCurrentPosition());
 		player.release();
+		
 		unregisterReceiver(receiver);
 		mHandler.removeCallbacks(playerInfoBroadcastRunnable);
+		startService(restartServiceIntent);
 	}
 
-	public void playSongAtIndex(int n) {
+	public void prepareSongAtIndex(int n) {
 
 		player.reset();
 		//Log.e("playlist", playList+"");
@@ -180,7 +191,7 @@ public class PlayService extends Service {
 		notificationManager.cancel(NOTIFICATION_ID);
 		player.prepareAsync();
 		nowIndex = n;
-
+		
 	}
 
 	private void initMediaPlayer() {
@@ -191,7 +202,15 @@ public class PlayService extends Service {
 		player.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
 	}
-
+	private void setNodificationPending(Bundle bundle){
+		Intent resumePlayActivity = new Intent(this, MusicPlay.class);
+		resumePlayActivity.setAction("123");
+		resumePlayActivity.putExtras(bundle);
+		resumePlayActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+				resumePlayActivity, PendingIntent.FLAG_UPDATE_CURRENT);
+		notificationBuilder.setContentIntent(pendingIntent);
+	}
 	public void sendNotification(int drawableId, String tickerText,
 			String title, String content) {
 		notificationBuilder.setSmallIcon(drawableId);
@@ -225,15 +244,20 @@ public class PlayService extends Service {
 		public void onPrepared(MediaPlayer mp) {
 			isPrepared = true;
 			bufferedPercent = 100;
-			mp.start();
-			notificationBuilder.setOngoing(true);
-			sendNotification(R.drawable.ic_media_play, playList.get(nowIndex)
-					.getTitle(), "正在播放", playList.get(nowIndex).getTitle());
-			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
-			broadcast.putExtra(EXTRA_PLAYER_STATUS, 0);
-			broadcast.putExtra(EXTRA_SONG_DURATION, player.getDuration());
-			broadcast.putExtra(EXTRA_NOW_PLAYING_INDEX, nowIndex);
-			sendBroadcast(broadcast);
+			if(autoPlay){
+				mp.start();
+				notificationBuilder.setOngoing(true);
+				sendNotification(R.drawable.ic_media_play, playList.get(nowIndex)
+						.getTitle(), "正在播放", playList.get(nowIndex).getTitle());
+				broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
+				broadcast.putExtra(EXTRA_PLAYER_STATUS, 0);
+				broadcast.putExtra(EXTRA_SONG_DURATION, player.getDuration());
+				broadcast.putExtra(EXTRA_NOW_PLAYING_INDEX, nowIndex);
+				sendBroadcast(broadcast);
+			}else{
+				mp.seekTo(currentPosition);
+			}
+			
 			// Log.e("player", "prepare");
 		}
 	};
@@ -242,7 +266,7 @@ public class PlayService extends Service {
 
 		public void onCompletion(MediaPlayer mp) {
 			if (playList.size() - 1 > nowIndex) {
-				playSongAtIndex(++nowIndex);
+				prepareSongAtIndex(++nowIndex);
 			}
 
 			new DoPersistThread().start();

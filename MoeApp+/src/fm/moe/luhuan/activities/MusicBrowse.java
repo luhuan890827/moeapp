@@ -18,9 +18,9 @@ import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.MoeHttp;
 import fm.moe.luhuan.service.PlayService;
 import android.app.Activity;
-import android.app.SearchManager;
+
 import android.content.Intent;
-import android.content.SharedPreferences;
+
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
@@ -45,7 +45,7 @@ import android.widget.HeaderViewListAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.SearchView;
+
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -58,7 +58,6 @@ public class MusicBrowse extends Activity {
 	private MoeHttp http;
 	private ConnectivityManager connectivityManager;
 	private SQLiteDatabase db;
-	private SearchView sv;
 	// private Object lock = new Object();
 
 	@Override
@@ -737,10 +736,10 @@ private OnItemClickListener onLocalItemClick = new OnItemClickListener() {
 			//Log.e("next url", result[1] + "");
 			if (result[1] != null) {
 				if(!result[1].equals("err")){
-					TextView tv = (TextView) inflater.inflate(
-							R.layout.big_text_item, null);
-					tv.setText("加载更多");
-					tv.setOnClickListener(onLoadMoreBtnClick);
+//					TextView tv = (TextView) inflater.inflate(
+//							R.layout.big_text_item, null);
+//					tv.setText("加载更多");
+//					tv.setOnClickListener(onLoadMoreBtnClick);
 					loadMoreBtn.setTag(R.string.more_btn_url, result[1]);
 				}
 				
@@ -767,7 +766,7 @@ private OnItemClickListener onLocalItemClick = new OnItemClickListener() {
 			}
 			v.findViewById(R.id.load_more_progress).setVisibility(View.VISIBLE);
 			String url = (String) v.getTag(R.string.more_btn_url);
-			LoadMoreTaskPlayable task = new LoadMoreTaskPlayable();
+			AsyncTask task = new LoadMoreTaskPlayable();
 			task.execute(url);
 
 		}

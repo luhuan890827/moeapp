@@ -10,5 +10,10 @@
         <item name="android:focusableInTouchMode">true</item>
         <item name="android:scrollHorizontally">true</item>
     </style>
+    <style name="stateful_center_button">
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/stateful_btn</item>
+        <item name="android:adjustViewBounds">true</item>
+    </style>
 
 </resources>
