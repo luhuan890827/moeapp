@@ -8,11 +8,11 @@ import java.io.IOException;
 
 import java.io.Serializable;
 
-import fm.moe.luhuan.DataStorageHelper;
 
-import fm.moe.luhuan.activities.MusicPlay;
+import fm.moe.luhuan.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.CommonHttpHelper;
+import fm.moe.luhuan.utils.DataStorageHelper;
 
 import android.R;
 import android.app.IntentService;

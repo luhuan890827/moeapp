@@ -2,8 +2,6 @@ package fm.moe.luhuan.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -33,17 +31,7 @@ public class CommonHttpHelper {
 			HttpResponse response = client.execute(request);
 			HttpEntity entity = response.getEntity();
 			InputStream inStream = entity.getContent();
-			ArrayList<Integer> data = new ArrayList<Integer>();
-			int b = 0;
-			while ((b = inStream.read()) > -1) {
-				data.add(b);
-			}
-			byte[] dataByte = new byte[data.size()];
-			for (int i = 0; i < data.size(); i++) {
-				dataByte[i] = (byte) data.get(i).intValue();
-			}
-			bm = BitmapFactory.decodeByteArray(dataByte, 0, dataByte.length);
-			inStream.close();
+			bm = BitmapFactory.decodeStream(inStream);
 		} catch (Exception e) {
 			Log.e("CommonHttpHelper", "getBitmap");
 		}

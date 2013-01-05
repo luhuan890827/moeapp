@@ -9,10 +9,10 @@ import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 
-import fm.moe.luhuan.DataStorageHelper;
-import fm.moe.luhuan.activities.MusicPlay;
+import fm.moe.luhuan.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.CommonHttpHelper;
+import fm.moe.luhuan.utils.DataStorageHelper;
 
 import android.R;
 import android.app.NotificationManager;

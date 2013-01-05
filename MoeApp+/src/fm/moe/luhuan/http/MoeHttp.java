@@ -1,6 +1,8 @@
 package fm.moe.luhuan.http;
 
 
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -49,12 +51,12 @@ public class MoeHttp {
 		return ss;
 	}
 
-	public String oauthRequest(String url)throws Exception {
+	public String oauthRequest(String url)throws SocketTimeoutException {
 		Log.e("url", url);
 		if (token != null && !token.isEmpty()) {
 			OAuthRequest req = new OAuthRequest(Verb.GET, url);
-			req.setConnectTimeout(3000, TimeUnit.MILLISECONDS);
-			req.setReadTimeout(4000, TimeUnit.MILLISECONDS);
+//			req.setConnectTimeout(3000, TimeUnit.MILLISECONDS);
+//			req.setReadTimeout(4000, TimeUnit.MILLISECONDS);
 			oService.signRequest(token, req);
 			Response resp = req.send();
 			return resp.getBody();

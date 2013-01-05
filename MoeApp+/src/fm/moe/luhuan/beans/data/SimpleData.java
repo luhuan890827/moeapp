@@ -8,6 +8,7 @@ public class SimpleData implements Serializable{
 	 */
 	private static final long serialVersionUID = 1L;
 	private int parentId=-1;
+	private String type;
 	private int id;
 	private String artist;
 	private String title;
@@ -69,6 +70,12 @@ public class SimpleData implements Serializable{
 	}
 	public void setParentTitle(String parentTitle) {
 		this.parentTitle = parentTitle;
+	}
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
 	}
 	
 }
