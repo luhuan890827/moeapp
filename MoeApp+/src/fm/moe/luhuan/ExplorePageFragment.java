@@ -4,7 +4,6 @@ import java.net.SocketTimeoutException;
 import java.util.List;
 
 import com.alibaba.fastjson.JSONException;
-import com.alibaba.fastjson.JSONObject;
 
 import fm.moe.luhuan.adapter.SimpleDataAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
@@ -20,18 +19,16 @@ import android.widget.AdapterView.OnItemClickListener;
 
 public class ExplorePageFragment extends RemoteContentFragment {
 	private SparseArray<List<SimpleData>> explorePageData;
-	private static final int KEY_MUSICS = 0;
-	private static final int KEY_HOTMUSICTS = 1;
+	private static final int KEY_HOTMUSICS = 0;
+	private static final int KEY_RADIOS = 1;
 	private static final int KEY_NEWMUSICS = 2;
-	private static final int KEY_RADIOS = 3;
-
+	private static final int KEY_MUSICS = 3;
 	private static final String REMOTE_DATA_URL = "http://moe.fm/explore?api=json&api_key=420f4049d93b1c64f5e811187ad3364c05016179a&new_musics=1&hot_musics=1&hot_radios=1&musics=1";
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		listView.setOnItemClickListener(onGroupClick);
-
 		Log.e("fragment", "oncreate");
 	}
 
@@ -50,7 +47,7 @@ public class ExplorePageFragment extends RemoteContentFragment {
 				SimpleDataAdapter adapter = new SimpleDataAdapter(
 						getActivity(), explorePageData.get(arg2));
 				listView.setAdapter(adapter);
-
+				listView.setOnItemClickListener(onWikiClick);
 			}
 
 		}
@@ -72,7 +69,7 @@ public class ExplorePageFragment extends RemoteContentFragment {
 				List<SimpleData> hotMusics = JSONUtils.getExpWikiList(json,
 						"hot_musics");
 				explorePageData = new SparseArray<List<SimpleData>>(5);
-				explorePageData.append(KEY_HOTMUSICTS, hotMusics);
+				explorePageData.append(KEY_HOTMUSICS, hotMusics);
 				explorePageData.append(KEY_MUSICS, musics);
 				explorePageData.append(KEY_NEWMUSICS, newAlbums);
 				explorePageData.append(KEY_RADIOS, hotRadios);
