@@ -18,6 +18,7 @@ import fm.moe.luhuan.service.DownloadService;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.service.QueueDownloadService;
 import fm.moe.luhuan.utils.DataStorageHelper;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -32,6 +33,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
@@ -87,6 +89,7 @@ public class MusicPlay extends Activity {
 
 	// constants
 
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -118,6 +121,7 @@ public class MusicPlay extends Activity {
 			listView.setOnItemClickListener(onListViewClick);
 			nowIndex = 0;
 			setStaticView();
+			//from browser
 			if (action == null) {
 				nowIndex = bundle.getInt(PlayService.EXTRA_SELECTED_INDEX);
 
@@ -190,6 +194,7 @@ public class MusicPlay extends Activity {
 
 	}
 
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private void setStaticView() {
 		SimpleData item = playList.get(nowIndex);
 		getActionBar().setTitle(

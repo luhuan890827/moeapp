@@ -5,8 +5,10 @@ import java.util.ArrayList;
 
 import fm.moe.luhuan.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
+import fm.moe.luhuan.utils.CrashHelpper;
 import fm.moe.luhuan.utils.DataStorageHelper;
 import android.R;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -69,6 +71,7 @@ public class PlayService extends Service {
 	private int bufferedPercent = 0;
 	private boolean autoPlay=true;
 	private int currentPosition = 0;
+	private int sId;
 	@Override
 	public void onCreate() {
 		
@@ -76,6 +79,8 @@ public class PlayService extends Service {
 		
 		mHandler.post(playerInfoBroadcastRunnable);
 		initMediaPlayer();
+		CrashHelpper ch = CrashHelpper.getInstance();
+		ch.register(this);
 		
 
 		notificationBuilder = new Builder(this);
@@ -84,7 +89,7 @@ public class PlayService extends Service {
 		
 		fileHelper = new DataStorageHelper(this);
 		registerReceiver(receiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
-		
+		//throw new NullPointerException("blablala");
 		// Log.e("service", "oncreate");
 	}
 
@@ -107,7 +112,11 @@ public class PlayService extends Service {
 				playList = (ArrayList<SimpleData>) bundle.get(EXTRA_PLAYLIST);
 				nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
 				setNodificationPending(bundle);
+				
 				nowIndex = (Integer) bundle.get(EXTRA_SELECTED_INDEX);
+				Notification n = notificationBuilder.build();
+				//call below to infer the system that the service is important
+				startForeground(startId, n);
 				prepareSongAtIndex(nowIndex);
 			
 			} else if (action.equals(ACTION_USER_OPERATE)) {
@@ -136,7 +145,8 @@ public class PlayService extends Service {
 		
 		
 			//pending intent£¿
-		return START_STICKY;
+		
+		return START_NOT_STICKY;
 	}
 
 	@Override
@@ -166,6 +176,7 @@ public class PlayService extends Service {
 		unregisterReceiver(receiver);
 		mHandler.removeCallbacks(playerInfoBroadcastRunnable);
 		startService(restartServiceIntent);
+		Log.e("ondes", "ondes");
 	}
 
 	public void prepareSongAtIndex(int n) {
