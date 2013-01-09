@@ -38,6 +38,12 @@ public class MusicBrowse extends FragmentActivity {
 		
 		
 	}
+	@Override
+	public boolean onSearchRequested() {
+		startSearch(null, false, null, false);
+
+		return true;
+	}
 	private Fragment getCurrentFragment(){
 		
 		return getSupportFragmentManager().findFragmentByTag( "android:switcher:"+R.id.view_pager+":"+mViewPager.getCurrentItem());

@@ -1,4 +1,4 @@
-package fm.moe.luhuan.activities;
+package fm.moe.luhuan;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,16 +8,17 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import com.alibaba.fastjson.JSON;
-import fm.moe.luhuan.DataStorageHelper;
 //
 import fm.moe.luhuan.R;
-import fm.moe.luhuan.adapters.SimpleDataAdapter;
+import fm.moe.luhuan.adapter.SimpleDataAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.CommonHttpHelper;
 import fm.moe.luhuan.http.MoeHttp;
 import fm.moe.luhuan.service.DownloadService;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.service.QueueDownloadService;
+import fm.moe.luhuan.utils.DataStorageHelper;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -32,6 +33,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
@@ -54,7 +56,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MusicPlay extends Activity {
+public class MusicPlayBackUp extends Activity {
 
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("mm:ss");
 	private MoeHttp moeHttp;
@@ -87,6 +89,7 @@ public class MusicPlay extends Activity {
 
 	// constants
 
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -118,6 +121,7 @@ public class MusicPlay extends Activity {
 			listView.setOnItemClickListener(onListViewClick);
 			nowIndex = 0;
 			setStaticView();
+			//from browser
 			if (action == null) {
 				nowIndex = bundle.getInt(PlayService.EXTRA_SELECTED_INDEX);
 
@@ -135,12 +139,13 @@ public class MusicPlay extends Activity {
 	protected void onStart() {
 
 		super.onStart();
-
+		
 		registerReceiver(broadcastReceiver, intentFilter);
 		mHandler.postDelayed(setStaticViewRunnable, 100);
 		mHandler.postDelayed(setStaticViewRunnable, 1000);
+		
 	}
-
+	
 	@Override
 	protected void onStop() {
 		super.onStop();
@@ -190,6 +195,7 @@ public class MusicPlay extends Activity {
 
 	}
 
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private void setStaticView() {
 		SimpleData item = playList.get(nowIndex);
 		getActionBar().setTitle(
@@ -225,7 +231,7 @@ public class MusicPlay extends Activity {
 	}
 
 	private void sendChangeSongIntent(int targetIndex) {
-		Intent changeSongIntent = new Intent(MusicPlay.this, PlayService.class);
+		Intent changeSongIntent = new Intent(MusicPlayBackUp.this, PlayService.class);
 		changeSongIntent.setAction(PlayService.ACTION_USER_OPERATE);
 		changeSongIntent.putExtra(PlayService.EXTRA_TARGET_SONG_INDEX,
 				targetIndex);
@@ -483,7 +489,7 @@ public class MusicPlay extends Activity {
 		}
 
 		private void switchPlayPause(View v) {
-			Intent ppIntent = new Intent(MusicPlay.this, PlayService.class);
+			Intent ppIntent = new Intent(MusicPlayBackUp.this, PlayService.class);
 			ppIntent.setAction(PlayService.ACTION_USER_OPERATE);
 
 			if (isPlayerPlaying) {
@@ -509,7 +515,7 @@ public class MusicPlay extends Activity {
 		private void downloadSong() {
 
 			if (fileHelper.isItemSaved(playList.get(nowIndex))) {
-				Toast.makeText(MusicPlay.this, "该歌曲已下载", Toast.LENGTH_SHORT)
+				Toast.makeText(MusicPlayBackUp.this, "该歌曲已下载", Toast.LENGTH_SHORT)
 						.show();
 			} else {
 				Intent downloadIntent = new Intent(getApplicationContext(),
@@ -581,18 +587,18 @@ public class MusicPlay extends Activity {
 		private void onDownloadStateChange(Intent intent) {
 			switch (intent.getIntExtra(DownloadService.EXTRA_DOWNLOAD_STATE, 0)) {
 			case 0:
-				Toast.makeText(MusicPlay.this, "已加入到下载队列", Toast.LENGTH_SHORT)
+				Toast.makeText(MusicPlayBackUp.this, "已加入到下载队列", Toast.LENGTH_SHORT)
 						.show();
 				break;
 			case 1:
-				Toast.makeText(MusicPlay.this,
+				Toast.makeText(MusicPlayBackUp.this,
 						playList.get(nowIndex).getTitle() + "下载已完成",
 						Toast.LENGTH_SHORT).show();
 				break;
 			case -1:
 				String info = intent
 						.getStringExtra(DownloadService.EXTRA_CONN_PROBLEM_INFO);
-				Toast.makeText(MusicPlay.this, info + ",下载已暂停",
+				Toast.makeText(MusicPlayBackUp.this, info + ",下载已暂停",
 						Toast.LENGTH_SHORT).show();
 				break;
 
@@ -664,7 +670,7 @@ public class MusicPlay extends Activity {
 
 		public void onStopTrackingTouch(SeekBar seekBar) {
 			if (isPlayerPrepared) {
-				Intent seekIntent = new Intent(MusicPlay.this,
+				Intent seekIntent = new Intent(MusicPlayBackUp.this,
 						PlayService.class);
 				seekIntent.setAction(PlayService.ACTION_USER_OPERATE);
 				seekIntent.putExtra(PlayService.EXTRA_SEEK_TO,

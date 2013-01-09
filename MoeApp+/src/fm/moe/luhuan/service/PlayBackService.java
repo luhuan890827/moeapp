@@ -2,11 +2,15 @@ package fm.moe.luhuan.service;
 
 import java.util.ArrayList;
 
+import android.R;
+import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
@@ -19,32 +23,47 @@ import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import fm.moe.luhuan.IPlaybackService;
+import fm.moe.luhuan.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.utils.DataStorageHelper;
 
-public class AIDLPlayBackService extends Service{
+public class PlayBackService extends Service{
 	private MediaPlayer mPlayer;
 	private NotificationManager ntfManager;
 	private ArrayList<SimpleData> playList;
 	private String playListId;
 	private int nowIndex;
 	private DataStorageHelper dataHelper;
-	private int startId;
+	private int sID;
 	private NotificationCompat.Builder nBuilder;
 	private boolean isPrepared;
-	
+	private Notification mNotification;
+	private PendingIntent pIntent;
+	private boolean onbind;
+	private static final int NOTIFICATION_ID =PlayBackService.class.hashCode();
+	public static final String ACTION_PLAYER_STATE_CHANGE = "player state change";
 	public static final String EXTRA_PLAYLIST = "playList";
 	public static final String EXTRA_PLAYLIST_ID = "playListId";
 	public static final String EXTRA_SELECTED_INDEX = "selectedIndex";
+	public static final String EXTRA_PLAYER_STATUS = "player state";
+	public static final String EXTRA_PLAYER_BUFFERING_PERCENT="buffering percent";
+	public static final int PLAYER_PREPARED = 1;
+	public static final int PLAYER_BURRERING = 2;
+	public static final int PLAYER_COMPLETION =3;
 	@Override
 	public void onCreate() {
+		super.onCreate();
+		
 		mPlayer = new MediaPlayer();
 		setPlayerListeners();
 		ntfManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		nBuilder = new NotificationCompat.Builder(this);
+		Intent intent = new Intent(this,MusicPlay.class);
+		pIntent = PendingIntent.getActivity(this, 0, intent, Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+		nBuilder.setContentIntent(pIntent);
 		dataHelper = new DataStorageHelper(this);
+		registerReceiver(receiver, new IntentFilter());
 		
-		super.onCreate();
 	}
 	
 	@Override
@@ -55,6 +74,7 @@ public class AIDLPlayBackService extends Service{
 			nowIndex = data.getInt(EXTRA_SELECTED_INDEX);
 			playListId = data.getString(EXTRA_PLAYLIST_ID);
 			playSongAtIndex(nowIndex);
+			sID = startId;
 		}
 		
 		return START_NOT_STICKY;
@@ -69,28 +89,45 @@ public class AIDLPlayBackService extends Service{
 	}
 	private void playSongAtIndex(int n){
 		mPlayer.reset();
+		SimpleData item = playList.get(n);
+		sendNotification(R.drawable.ic_media_play, item.getTitle(), "正在播放", item.getTitle());
 		isPrepared = false;
 		String url = "";
 		try{
-			url = dataHelper.getItemMp3Url(playList.get(n));
+			url = dataHelper.getItemMp3Url(item);
+			mPlayer.setDataSource(url);
+			isPrepared = false;
 		}catch(Exception e){
 			Log.e("", "",e);
 		}
 		
-
-		try {
-			// fav song的时候为NULL？
-			mPlayer.setDataSource(url);
-			isPrepared = false;
-
-		} catch (Exception e) {
-			Log.e("setDataSource err", "", e);
-		}
-		//notificationManager.cancel(NOTIFICATION_ID);
 		mPlayer.prepareAsync();
 		nowIndex = n;
 	}
-	
+	private void sendNotification(int drawableId, String tickerText,
+			String title, String content) {
+		
+			nBuilder.setSmallIcon(drawableId);
+			if(tickerText!=null){
+				nBuilder.setTicker("萌否音乐:" + tickerText);	
+			}
+			
+			nBuilder.setContentTitle("萌否音乐:" + title);
+			nBuilder.setContentText(content);
+			mNotification = nBuilder.build();
+			if(!onbind){
+			setAsForeGround();
+			
+		}
+		
+		
+		
+	}
+	private void setAsForeGround(){
+		startForeground(sID, mNotification);
+		ntfManager.cancelAll();
+		
+	}
 	public class PlayBackServiceImpl extends IPlaybackService.Stub {
 
 		@Override
@@ -111,7 +148,7 @@ public class AIDLPlayBackService extends Service{
 
 		@Override
 		public void playSongAtIndex(int n) throws RemoteException {
-			playSongAtIndex(n);
+			PlayBackService.this.playSongAtIndex(n);
 		}
 
 		@Override
@@ -132,15 +169,36 @@ public class AIDLPlayBackService extends Service{
 
 		@Override
 		public boolean isPlayerPlaying() throws RemoteException {
-			// TODO Auto-generated method stub
 			return mPlayer.isPlaying();
+		}
+
+
+		@Override
+		public void seekTo(int n) throws RemoteException {
+			mPlayer.seekTo(n)	;
+		}
+
+		@Override
+		public void setAsForeGround() throws RemoteException {
+			PlayBackService.this.setAsForeGround();
+		}
+
+		@Override
+		public void stopAsForeGround() throws RemoteException {
+			PlayBackService.this.stopForeground(true);
 		}
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		// TODO Auto-generated method stub
+		onbind = true;
+		
 		return new PlayBackServiceImpl();
+	}
+	@Override
+	public boolean onUnbind(Intent intent) {
+		onbind = false;
+		return super.onUnbind(intent);
 	}
 	private OnErrorListener onPlayerErr = new OnErrorListener() {
 
@@ -155,6 +213,9 @@ public class AIDLPlayBackService extends Service{
 		public void onPrepared(MediaPlayer mp) {
 			isPrepared = true;
 			mp.start();
+			Intent broadcast = new Intent(ACTION_PLAYER_STATE_CHANGE);
+			broadcast.putExtra(EXTRA_PLAYER_STATUS, PLAYER_PREPARED);
+			sendBroadcast(broadcast);
 			// Log.e("player", "prepare");
 		}
 	};
@@ -163,8 +224,11 @@ public class AIDLPlayBackService extends Service{
 
 		public void onCompletion(MediaPlayer mp) {
 			if (playList.size() - 1 > nowIndex) {
-				
+				playSongAtIndex(++nowIndex);
 			}
+			Intent broadcast = new Intent(ACTION_PLAYER_STATE_CHANGE);
+			broadcast.putExtra(EXTRA_PLAYER_STATUS, PLAYER_COMPLETION);
+			sendBroadcast(broadcast);
 
 			
 			// Log.e("broadcast", "send");
@@ -174,8 +238,10 @@ public class AIDLPlayBackService extends Service{
 	private OnBufferingUpdateListener onSongBuffering = new OnBufferingUpdateListener() {
 
 		public void onBufferingUpdate(MediaPlayer mp, int percent) {
-			
-			Log.e("buffered update", percent + "");
+			Intent broadcast = new Intent(ACTION_PLAYER_STATE_CHANGE);
+			broadcast.putExtra(EXTRA_PLAYER_BUFFERING_PERCENT, percent);
+			sendBroadcast(broadcast);
+			//Log.e("buffered update", percent + "");
 
 		}
 	};
@@ -183,8 +249,13 @@ public class AIDLPlayBackService extends Service{
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			//Intent.ACTION_HEADSET_PLUG
 			if (intent.getIntExtra("state", 1) == 0) {
-				
+				if(mPlayer.isPlaying()){
+					mPlayer.pause();
+					sendNotification(R.drawable.ic_media_pause, "播放已暂停",
+							"播放已暂停", "耳机已拔出");
+				}
 			}
 
 		}

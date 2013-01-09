@@ -59,6 +59,17 @@
         <service
             android:name=".service.PlayService"
             android:process=":playback" />
+        <service
+            android:name=".service.PlayBackService"
+            android:process=":playback" >
+            <intent-filter 
+                
+                >
+                <action android:name="android.intent.action.HEADSET_PLUG"/>
+                
+            </intent-filter>
+            
+        </service>
         <service android:name=".service.DownloadService" />
         <service android:name=".service.QueueDownloadService" />
     </application>

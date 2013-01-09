@@ -8,4 +8,7 @@ void pause();
 void start();
 boolean isPlayerPrepared();
 boolean isPlayerPlaying();
+void setAsForeGround();
+void seekTo(int n);
+void stopAsForeGround();
 }

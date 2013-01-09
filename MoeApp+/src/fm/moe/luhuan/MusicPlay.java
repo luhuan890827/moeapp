@@ -15,17 +15,22 @@ import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.CommonHttpHelper;
 import fm.moe.luhuan.http.MoeHttp;
 import fm.moe.luhuan.service.DownloadService;
+import fm.moe.luhuan.service.PlayBackService;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.service.QueueDownloadService;
 import fm.moe.luhuan.utils.DataStorageHelper;
 import android.annotation.TargetApi;
 import android.app.Activity;
+
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
+
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
+import android.content.ServiceConnection;
+
+import android.content.res.Resources.NotFoundException;
 
 import android.graphics.Bitmap;
 
@@ -36,6 +41,8 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.os.RemoteException;
 
 import android.text.Html;
 import android.util.DisplayMetrics;
@@ -58,6 +65,7 @@ import android.widget.Toast;
 
 public class MusicPlay extends Activity {
 
+	public static final int REQUEST_ACTIVITY_FRONT=1;
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("mm:ss");
 	private MoeHttp moeHttp;
 	private CommonHttpHelper commonHttp = new CommonHttpHelper();
@@ -66,12 +74,9 @@ public class MusicPlay extends Activity {
 	private AsyncTask coverTask;
 	private DataStorageHelper fileHelper;
 
-	private int nowIndex = 0;
-	private int currentPosition = 0;
 	private ArrayList<SimpleData> playList;
 	private SparseArray<Bitmap> imageCache = new SparseArray<Bitmap>();
 	private IntentFilter intentFilter = new IntentFilter();
-	private SharedPreferences pref;
 	// widgets
 	private Texts texts = new Texts();
 	private Buttons buttons = new Buttons();
@@ -80,20 +85,37 @@ public class MusicPlay extends Activity {
 	private ListView listView;
 	private RelativeLayout songView;
 	private ConnectivityManager connectivityManager;
-	private boolean isWaiting = false;
-	// player flags and info
-	private boolean isPlayerPlaying = false;
-	private boolean isPlayerPrepared = false;
-	// private int playedTime = 0;
-	private int fullTime = 0;
+	private boolean onbind = false;
+	private IPlaybackService playbackService;
+	private ServiceConnection servConn = new ServiceConnection() {
 
-	// constants
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			onbind = false;
+		}
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			onbind = true;
+			playbackService = IPlaybackService.Stub.asInterface(service);
+			
+			try {
+				setStaticView();
+			} catch (RemoteException e) {
+				Log.e("", "", e);
+				e.printStackTrace();
+			} catch (NotFoundException e) {
+				Log.e("", "", e);
+				e.printStackTrace();
+			}
+		}
+	};
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		
 		setContentView(R.layout.player);
 		Log.e("music play", "create");
 		initViews();
@@ -102,36 +124,31 @@ public class MusicPlay extends Activity {
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 		moeHttp = new MoeHttp(this);
 		fileHelper = new DataStorageHelper(this);
-		intentFilter.addAction(PlayService.ACTION_PLAYER_STATE_CHANGE);
+		intentFilter.addAction(PlayBackService.ACTION_PLAYER_STATE_CHANGE);
 		intentFilter.addAction(DownloadService.ACTION_DOWNLOAD_STATE_CHANGE);
-		intentFilter.addAction(PlayService.ACTION_SONG_INFO_BROADCAST);
-		intentFilter.addAction(PlayService.ACTION_REQUEST_PLAYLIST_RESET);
-		pref = getSharedPreferences("app_settings", MODE_PRIVATE);
 
 		connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 		NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
 
 		Intent incomingIntent = getIntent();
-		final Bundle bundle = incomingIntent.getExtras();
+		Bundle bundle = incomingIntent.getExtras();
 		String action = incomingIntent.getAction();
 		if (bundle != null) {
 			playList = (ArrayList<SimpleData>) bundle
 					.get(PlayService.EXTRA_PLAYLIST);
 			listView.setAdapter(new SimpleDataAdapter(this, playList));
 			listView.setOnItemClickListener(onListViewClick);
-			nowIndex = 0;
-			setStaticView();
-			//from browser
+			// from browser
 			if (action == null) {
-				nowIndex = bundle.getInt(PlayService.EXTRA_SELECTED_INDEX);
 
-				Intent serviceIntent = new Intent(this, PlayService.class);
+				Intent serviceIntent = new Intent(this, PlayBackService.class);
 				serviceIntent.putExtras(bundle);
 				serviceIntent.setAction(PlayService.ACTION_START_PLAY);
 				startService(serviceIntent);
 			}
 
 		}
+		
 
 	}
 
@@ -139,16 +156,39 @@ public class MusicPlay extends Activity {
 	protected void onStart() {
 
 		super.onStart();
-
+		mHandler.post(refreshPlayingStatusRunnable);
+		Intent bindIntent = new Intent(this, PlayBackService.class);
+		bindService(bindIntent, servConn, BIND_AUTO_CREATE);
+		
 		registerReceiver(broadcastReceiver, intentFilter);
-		mHandler.postDelayed(setStaticViewRunnable, 100);
-		mHandler.postDelayed(setStaticViewRunnable, 1000);
+		if(onbind){
+			try {
+				playbackService.stopAsForeGround();
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
-
+	
 	@Override
 	protected void onStop() {
 		super.onStop();
+		if(onbind){
+			try {
+				if(playbackService.isPlayerPlaying()){
+					playbackService.setAsForeGround();
+				}
+				
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		mHandler.removeCallbacks(refreshPlayingStatusRunnable);
 		unregisterReceiver(broadcastReceiver);
+		unbindService(servConn);
+		
 	}
 
 	@Override
@@ -184,7 +224,7 @@ public class MusicPlay extends Activity {
 		texts.bindView();
 		buttons.bindView();
 		seekBar = (SeekBar) findViewById(R.id.playing_seekbar);
-		seekBar.setOnSeekBarChangeListener(seekPos);
+		seekBar.setOnSeekBarChangeListener(onSeekPos);
 		albumCover = (ImageView) findViewById(R.id.big_cover);
 		DisplayMetrics dm = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(dm);
@@ -195,7 +235,8 @@ public class MusicPlay extends Activity {
 	}
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private void setStaticView() {
+	private void setStaticView() throws RemoteException, NotFoundException {
+		int nowIndex = playbackService.getNowIndex();
 		SimpleData item = playList.get(nowIndex);
 		getActionBar().setTitle(
 				"正在播放:" + (nowIndex + 1) + "/" + playList.size());
@@ -211,10 +252,10 @@ public class MusicPlay extends Activity {
 		}
 		if (item.getArtist() == null || item.getArtist().equals("")) {
 			texts.artist.setText("未知艺术家");
-		}else{
+		} else {
 			texts.artist.setText(item.getArtist());
 		}
-		if (isPlayerPlaying) {
+		if (playbackService.isPlayerPlaying()) {
 			buttons.pp.setImageDrawable(getResources().getDrawable(
 					android.R.drawable.ic_media_pause));
 
@@ -222,32 +263,23 @@ public class MusicPlay extends Activity {
 			buttons.pp.setImageDrawable(getResources().getDrawable(
 					android.R.drawable.ic_media_play));
 		}
-		texts.fullTime.setText(dateFormat.format(fullTime));
+		if (playbackService.isPlayerPrepared()) {
+			texts.fullTime.setText(dateFormat.format(playbackService
+					.getSongDuration()));
+		}
+
 		texts.album.setText(item.getParentTitle());
 
-		loadCover(item.getAlbumnCoverUrl());
+		loadCover(item);
 
 	}
 
-	private void sendChangeSongIntent(int targetIndex) {
-		Intent changeSongIntent = new Intent(MusicPlay.this, PlayService.class);
-		changeSongIntent.setAction(PlayService.ACTION_USER_OPERATE);
-		changeSongIntent.putExtra(PlayService.EXTRA_TARGET_SONG_INDEX,
-				targetIndex);
-		isPlayerPlaying = false;
-		isPlayerPrepared = false;
-		fullTime = 0;
-		nowIndex = targetIndex;
-		startService(changeSongIntent);
-		mHandler.post(setStaticViewRunnable);
-	}
-
-	private void loadCover(final String albumnCoverUrl) {
+	private void loadCover(final SimpleData item) {
 		if (coverTask != null) {
 			coverTask.cancel(true);
 		}
 
-		Bitmap bm = imageCache.get(playList.get(nowIndex).getId());
+		Bitmap bm = imageCache.get(item.getParentId());
 		if (bm != null) {
 			albumCover.setImageBitmap(bm);
 		} else {
@@ -255,15 +287,14 @@ public class MusicPlay extends Activity {
 
 				@Override
 				protected Bitmap doInBackground(Object... params) {
-					Bitmap bm = fileHelper.getItemCoverBitmap(playList
-							.get(nowIndex));
+					Bitmap bm = fileHelper.getItemCoverBitmap(item);
 					// Log.e("loading bitmap", albumnCoverUrl);
 					if (bm == null) {
-						bm = commonHttp.getBitmap(albumnCoverUrl);
+						bm = commonHttp.getBitmap(item.getAlbumnCoverUrl());
 
 					}
 
-					imageCache.put(playList.get(nowIndex).getId(), bm);
+					imageCache.put(item.getParentId(), bm);
 					return bm;
 				}
 
@@ -340,10 +371,22 @@ public class MusicPlay extends Activity {
 
 			switch (v.getId()) {
 			case R.id.song_save:
-				downloadSong();
+				try {
+					downloadSong();
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
 				break;
 			case R.id.ib_pp:
-				switchPlayPause(v);
+				try {
+					switchPlayPause(v);
+				} catch (RemoteException e) {
+					Log.e("", "",e);
+					e.printStackTrace();
+				} catch (NotFoundException e) {
+					Log.e("", "",e);
+					e.printStackTrace();
+				}
 				break;
 			case R.id.ib_next:
 				doChangeSong(true);
@@ -381,78 +424,95 @@ public class MusicPlay extends Activity {
 			new Thread() {
 				public void run() {
 					String ope = null;
-					if (playList.get(nowIndex).isFav()) {
-						ope = "delete";
-					} else {
-						ope = "add";
-					}
-					String url = "http://api.moefou.org/fav/" + ope
-							+ ".json?fav_obj_type=song&fav_type=1&fav_obj_id="
-							+ playList.get(nowIndex).getId();
-					try {
-						String json = moeHttp.oauthRequest(url);
-
-						if (!JSON.parseObject(json).getJSONObject("response")
-								.getJSONObject("information")
-								.getBoolean("has_error")) {
-							playList.get(nowIndex).setFav(
-									!playList.get(nowIndex).isFav());
-							fileHelper.updateFav(playList.get(nowIndex));
-							mHandler.post(new Runnable() {
-
-								public void run() {
-									// Log.e("!!", "!!");
-									if (playList.get(nowIndex).isFav()) {
-										buttons.fav
-												.setImageDrawable(getResources()
-														.getDrawable(
-																android.R.drawable.btn_star_big_on));
-										Toast.makeText(getApplicationContext(),
-												"收藏成功", Toast.LENGTH_SHORT)
-												.show();
-									} else {
-										buttons.fav
-												.setImageDrawable(getResources()
-														.getDrawable(
-																android.R.drawable.btn_star_big_off));
-										Toast.makeText(getApplicationContext(),
-												"已取消收藏", Toast.LENGTH_SHORT)
-												.show();
-									}
-								}
-							});
+					if (onbind) {
+						SimpleData item = null;
+						try {
+							item = playList.get(playbackService.getNowIndex());
+						} catch (RemoteException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
 						}
-						;
+						if (item.isFav()) {
+							ope = "delete";
+						} else {
+							ope = "add";
+						}
+						String url = "http://api.moefou.org/fav/"
+								+ ope
+								+ ".json?fav_obj_type=song&fav_type=1&fav_obj_id="
+								+ item.getId();
+						try {
+							String json = moeHttp.oauthRequest(url);
 
-						// Log.e("fav", json);
-					} catch (Exception e) {
-						Log.e("", "", e);
+							if (!JSON.parseObject(json)
+									.getJSONObject("response")
+									.getJSONObject("information")
+									.getBoolean("has_error")) {
+								item.setFav(!item.isFav());
+								fileHelper.updateFav(item);
+								final SimpleData param = item;
+								mHandler.post(new Runnable() {
+
+									public void run() {
+										// Log.e("!!", "!!");
+										if (param.isFav()) {
+											buttons.fav
+													.setImageDrawable(getResources()
+															.getDrawable(
+																	android.R.drawable.btn_star_big_on));
+											Toast.makeText(
+													getApplicationContext(),
+													"收藏成功", Toast.LENGTH_SHORT)
+													.show();
+										} else {
+											buttons.fav
+													.setImageDrawable(getResources()
+															.getDrawable(
+																	android.R.drawable.btn_star_big_off));
+											Toast.makeText(
+													getApplicationContext(),
+													"已取消收藏", Toast.LENGTH_SHORT)
+													.show();
+										}
+									}
+								});
+							}
+
+							// Log.e("fav", json);
+						} catch (Exception e) {
+							Log.e("", "", e);
+						}
 					}
+
 				}
 			}.start();
 		}
 
 		private void shareSong() {
-			Intent shareIntent = new Intent(Intent.ACTION_SEND);
 
-			// shareIntent.putExtra(Intent.EXTRA_TEXT, "test");
-			try {
-				Bitmap bm = imageCache.get(playList.get(nowIndex).getId());
-				String imageUrl = fileHelper.getTempImageUri(bm);
-				Uri uri = Uri.fromFile(new File(imageUrl));
-				shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-				shareIntent.setType("image/jpeg");
-				shareIntent.putExtra(Intent.EXTRA_TEXT,
-						"http://moe.fm/listen?song="
-								+ playList.get(nowIndex).getId()
-								+ "  ,分享一首来自@萌否网 的歌曲,"
-								+ playList.get(nowIndex).getTitle());
-			} catch (IOException e) {
-				Log.e("", "", e);
-				e.printStackTrace();
+			if (onbind) {
+				Intent shareIntent = new Intent(Intent.ACTION_SEND);
+				try {
+					SimpleData item = playList.get(playbackService
+							.getNowIndex());
+					Bitmap bm = imageCache.get(item.getId());
+					String imageUrl = fileHelper.getTempImageUri(bm);
+					Uri uri = Uri.fromFile(new File(imageUrl));
+					shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+					shareIntent.setType("image/jpeg");
+					shareIntent.putExtra(Intent.EXTRA_TEXT,
+							"http://moe.fm/listen?song=" + item.getId()
+									+ "  ,分享一首来自@萌否网 的歌曲," + item.getTitle());
+				} catch (IOException e) {
+					Log.e("", "", e);
+					e.printStackTrace();
+				} catch (RemoteException e) {
+					Log.e("", "", e);
+					e.printStackTrace();
+				}
+
+				startActivity(Intent.createChooser(shareIntent, "分享到..."));
 			}
-
-			startActivity(Intent.createChooser(shareIntent, "分享到..."));
 		}
 
 		private void doChangeSong(final boolean isNext) {
@@ -468,18 +528,43 @@ public class MusicPlay extends Activity {
 
 				@Override
 				public void run() {
-
-					int tarIndex = nowIndex + clickCount;
-					if (tarIndex < 0) {
-						tarIndex = 0;
-					} else if (tarIndex > playList.size() - 1) {
-						tarIndex = playList.size() - 1;
+					if (onbind) {
+						int tarIndex = 0;
+						try {
+							tarIndex = playbackService.getNowIndex()
+									+ clickCount;
+						} catch (RemoteException e) {
+							Log.e("", "", e);
+							e.printStackTrace();
+						}
+						if (tarIndex < 0) {
+							tarIndex = 0;
+						} else if (tarIndex > playList.size() - 1) {
+							tarIndex = playList.size() - 1;
+						}
+						try {
+							playbackService.playSongAtIndex(tarIndex);
+						} catch (RemoteException e) {
+							Log.e("", "",e);
+							e.printStackTrace();
+						}
+						mHandler.post(new Runnable() {
+							
+							@Override
+							public void run() {
+								try {
+									setStaticView();
+								} catch (RemoteException e) {
+									e.printStackTrace();
+									Log.e("", "",e);
+								} catch (NotFoundException e) {
+									e.printStackTrace();
+									Log.e("", "",e);
+								}
+							}
+						});
+						clickCount = 0;
 					}
-
-					sendChangeSongIntent(tarIndex);
-
-					mHandler.post(resetTimeinfoRunnable);
-					clickCount = 0;
 
 				}
 			};
@@ -487,43 +572,45 @@ public class MusicPlay extends Activity {
 
 		}
 
-		private void switchPlayPause(View v) {
+		private void switchPlayPause(View v) throws RemoteException, NotFoundException {
 			Intent ppIntent = new Intent(MusicPlay.this, PlayService.class);
 			ppIntent.setAction(PlayService.ACTION_USER_OPERATE);
+			if (onbind) {
+				
+					if (playbackService.isPlayerPlaying()) {
 
-			if (isPlayerPlaying) {
-				ppIntent.putExtra(PlayService.EXTRA_SWITCH_PLAY_OR_PAUSE,
-						PlayService.PLAYER_PAUSE);
+						((ImageButton) v).setImageDrawable(getResources()
+								.getDrawable(android.R.drawable.ic_media_play));
+						playbackService.pause();
+						playbackService.stopAsForeGround();
+					} else if (playbackService.isPlayerPrepared()) {
 
-				((ImageButton) v).setImageDrawable(getResources().getDrawable(
-						android.R.drawable.ic_media_play));
-				isPlayerPlaying = false;
-			} else if (isPlayerPrepared) {
-
-				ppIntent.putExtra(PlayService.EXTRA_SWITCH_PLAY_OR_PAUSE,
-						PlayService.PLAYER_PLAY);
-
-				((ImageButton) v).setImageDrawable(getResources().getDrawable(
-						android.R.drawable.ic_media_pause));
-				isPlayerPlaying = true;
+						((ImageButton) v)
+								.setImageDrawable(getResources().getDrawable(
+										android.R.drawable.ic_media_pause));
+						playbackService.start();
+					}
+				
 			}
-			ppIntent.putExtra("", "");
-			startService(ppIntent);
+
 		}
 
-		private void downloadSong() {
-
-			if (fileHelper.isItemSaved(playList.get(nowIndex))) {
-				Toast.makeText(MusicPlay.this, "该歌曲已下载", Toast.LENGTH_SHORT)
-						.show();
-			} else {
-				Intent downloadIntent = new Intent(getApplicationContext(),
-						QueueDownloadService.class);
-				downloadIntent.putExtras(getIntent());
-				downloadIntent.putExtra(DownloadService.EXTRA_SONG_ITEM,
-						playList.get(nowIndex));
-				startService(downloadIntent);
+		private void downloadSong() throws RemoteException {
+			if (onbind) {
+				SimpleData item = playList.get(playbackService.getNowIndex());
+				if (fileHelper.isItemSaved(item)) {
+					Toast.makeText(MusicPlay.this, "该歌曲已下载", Toast.LENGTH_SHORT)
+							.show();
+				} else {
+					Intent downloadIntent = new Intent(getApplicationContext(),
+							QueueDownloadService.class);
+					downloadIntent.putExtras(getIntent());
+					downloadIntent.putExtra(DownloadService.EXTRA_SONG_ITEM,
+							item);
+					startService(downloadIntent);
+				}
 			}
+
 		}
 	};
 	private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -532,53 +619,17 @@ public class MusicPlay extends Activity {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 
-			if (action.equals(PlayService.ACTION_PLAYER_STATE_CHANGE)) {
-				onPlayerStateChange(intent);
+			if (action.equals(PlayBackService.ACTION_PLAYER_STATE_CHANGE)) {
+				try {
+					onPlayerStateChange(intent);
+				} catch (RemoteException e) {
+					Log.e("", "", e);
+					e.printStackTrace();
+				}
 			}
 
 			if (action.equals(DownloadService.ACTION_DOWNLOAD_STATE_CHANGE)) {
 				onDownloadStateChange(intent);
-			}
-			if (action.equals(PlayService.ACTION_SONG_INFO_BROADCAST)) {
-				currentPosition = intent.getIntExtra(
-						PlayService.EXTRA_SONG_CURRENT_POSITION, 0);
-				int temp = intent.getIntExtra(
-						PlayService.EXTRA_NOW_PLAYING_INDEX, 0);
-				if (temp > 0) {
-					nowIndex = temp;
-
-				}
-				// Log.e("", "!"+currentPosition);
-				isPlayerPlaying = intent.getBooleanExtra(
-						PlayService.EXTRA_IS_PLAYER_PLAYING, false);
-				isPlayerPrepared = intent.getBooleanExtra(
-						PlayService.EXTRA_IS_PLAYER_PREPARED, false);
-				fullTime = intent.getIntExtra(PlayService.EXTRA_SONG_DURATION,
-						1);
-				if (currentPosition > 0) {
-					if (isPlayerPlaying) {
-						texts.played
-								.setText(dateFormat.format(currentPosition));
-						if (!seekBar.isPressed()) {
-							seekBar.setProgress(currentPosition * 100
-									/ fullTime);
-						}
-						// playedTime += 1000;
-					}
-				}
-			}
-			if (action.equals(PlayService.ACTION_REQUEST_PLAYLIST_RESET)) {
-				Intent resetIntent = new Intent(PlayService.ACTION_START_PLAY);
-				resetIntent
-						.setClass(getApplicationContext(), PlayService.class);
-				resetIntent.putExtras(getIntent().getExtras());
-				resetIntent.putExtra(PlayService.EXTRA_SONG_CURRENT_POSITION,
-						currentPosition);
-				resetIntent
-						.putExtra(PlayService.EXTRA_SELECTED_INDEX, nowIndex);
-				Log.e("now index", nowIndex + "");
-				startService(resetIntent);
-
 			}
 
 		}
@@ -589,57 +640,35 @@ public class MusicPlay extends Activity {
 				Toast.makeText(MusicPlay.this, "已加入到下载队列", Toast.LENGTH_SHORT)
 						.show();
 				break;
-			case 1:
-				Toast.makeText(MusicPlay.this,
-						playList.get(nowIndex).getTitle() + "下载已完成",
-						Toast.LENGTH_SHORT).show();
-				break;
-			case -1:
-				String info = intent
-						.getStringExtra(DownloadService.EXTRA_CONN_PROBLEM_INFO);
-				Toast.makeText(MusicPlay.this, info + ",下载已暂停",
-						Toast.LENGTH_SHORT).show();
-				break;
 
 			default:
 				break;
 			}
 		}
 
-		private void onPlayerStateChange(Intent intent) {
-
-			switch (intent.getIntExtra(PlayService.EXTRA_PLAYER_STATUS, 0)) {
-			case 0:// for prepared
+		private void onPlayerStateChange(Intent intent) throws RemoteException {
+			if (!onbind) {
+				return;
+			}
+			switch (intent.getIntExtra(PlayBackService.EXTRA_PLAYER_STATUS, 0)) {
+			case PlayBackService.PLAYER_PREPARED:// for prepared
 				buttons.pp.setImageDrawable(getResources().getDrawable(
 						android.R.drawable.ic_media_pause));
-				isPlayerPrepared = true;
-				isPlayerPlaying = true;
-				fullTime = intent.getIntExtra(PlayService.EXTRA_SONG_DURATION,
-						1);
 
-				texts.fullTime.setText(dateFormat.format(fullTime));
+				texts.fullTime.setText(dateFormat.format(playbackService
+						.getSongDuration()));
 
 				break;
-			case 1:// for completion
-				nowIndex = intent.getIntExtra(
-						PlayService.EXTRA_NOW_PLAYING_INDEX, 0);
+			case PlayBackService.PLAYER_COMPLETION:// for completion
 
-				if ((playList.size() - 1 != intent.getIntExtra(
-						PlayService.EXTRA_NOW_PLAYING_INDEX, 0))) {
-					mHandler.post(resetTimeinfoRunnable);
-					isPlayerPrepared = false;
-					isPlayerPlaying = false;
-					fullTime = 0;
-					setStaticView();
-				} else {
-					isPlayerPlaying = false;
+				if (playList.size() - 1 != playbackService.getNowIndex()) {
 					setStaticView();
 				}
 
 				break;
-			case 2:// for buffer update
+			case PlayBackService.PLAYER_BURRERING:// for buffer update
 				seekBar.setSecondaryProgress(intent.getIntExtra(
-						PlayService.EXTRA_PLAYER_BUFFERED_PERCENT, 0));
+						PlayBackService.EXTRA_PLAYER_BUFFERING_PERCENT, 0));
 				break;
 			case -1:// for err
 				break;
@@ -648,34 +677,23 @@ public class MusicPlay extends Activity {
 			}
 		}
 	};
-	private Runnable setStaticViewRunnable = new Runnable() {
+	
 
-		public void run() {
-
-			setStaticView();
-		}
-	};
-
-	private Runnable resetTimeinfoRunnable = new Runnable() {
-
-		public void run() {
-			texts.played.setText("00:00");
-			texts.fullTime.setText("00:00");
-			seekBar.setProgress(0);
-			seekBar.setSecondaryProgress(0);
-		}
-	};
-	private OnSeekBarChangeListener seekPos = new OnSeekBarChangeListener() {
+	
+	private OnSeekBarChangeListener onSeekPos = new OnSeekBarChangeListener() {
 
 		public void onStopTrackingTouch(SeekBar seekBar) {
-			if (isPlayerPrepared) {
-				Intent seekIntent = new Intent(MusicPlay.this,
-						PlayService.class);
-				seekIntent.setAction(PlayService.ACTION_USER_OPERATE);
-				seekIntent.putExtra(PlayService.EXTRA_SEEK_TO,
-						seekBar.getProgress() * fullTime / 100);
-				startService(seekIntent);
+			if(onbind){
+				try {
+					if (playbackService.isPlayerPrepared()) {
+						playbackService.seekTo(seekBar.getProgress() * playbackService.getSongDuration() / 100);
+					}
+				} catch (RemoteException e) {
+					Log.e("", "",e);
+					e.printStackTrace();
+				}
 			}
+			
 		}
 
 		public void onStartTrackingTouch(SeekBar seekBar) {
@@ -691,33 +709,67 @@ public class MusicPlay extends Activity {
 
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
-			sendChangeSongIntent(arg2);
+			if(onbind){
+				try {
+					playbackService.playSongAtIndex(arg2);
+					setStaticView();
+				} catch (RemoteException e) {
+					Log.e("", "",e);
+					e.printStackTrace();
+				}
+			}
+		}
+	};
+	private Runnable refreshPlayingStatusRunnable = new Runnable() {
+		
+		@Override
+		public void run() {
+			if(onbind){
+				try {
+					if(playbackService.isPlayerPlaying()){
+						int currentPosition = playbackService.getSongCurrentPosition();
+						texts.played.setText(dateFormat.format(currentPosition));
+						if (!seekBar.isPressed()) {
+							seekBar.setProgress(currentPosition * 100
+									/ playbackService.getSongDuration());
+						}
+					}
+				} catch (RemoteException e) {
+					Log.e("", "",e);
+					e.printStackTrace();
+				}
+			}
+			mHandler.postDelayed(refreshPlayingStatusRunnable, 500);
 		}
 	};
 	private OnClickListener onKeywordClick = new OnClickListener() {
 
 		public void onClick(View v) {
-			switch (v.getId()) {
-			case R.id.playing_song_artist:
-				if (!playList.get(nowIndex).getArtist().equals("")) {
-					startSearch(playList.get(nowIndex).getArtist(), false,
-							null, false);
+			if(onbind){
+				SimpleData item = null;
+				try {
+					item = playList.get(playbackService.getNowIndex());
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-				break;
-			case R.id.playing_song_albumn:
-				startSearch(playList.get(nowIndex).getParentTitle(), false,
-						null, false);
-				break;
-			default:
-				break;
+				switch (v.getId()) {
+				case R.id.playing_song_artist:
+					if (!item.getArtist().equals("")) {
+						startSearch(item.getArtist(), false,
+								null, false);
+					}
+					break;
+				case R.id.playing_song_albumn:
+					startSearch(item.getParentTitle(), false,
+							null, false);
+					break;
+				default:
+					break;
+				}
 			}
+			
 		}
 	};
-	private DialogInterface.OnClickListener positiveClick = new DialogInterface.OnClickListener() {
-
-		public void onClick(DialogInterface dialog, int which) {
-			// TODO Auto-generated method stub
-
-		}
-	};
+	
 }
