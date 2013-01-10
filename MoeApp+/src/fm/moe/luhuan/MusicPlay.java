@@ -98,9 +98,20 @@ public class MusicPlay extends Activity {
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			onbind = true;
 			playbackService = IPlaybackService.Stub.asInterface(service);
+			if(playList==null){
+				try {
+					playList = (ArrayList<SimpleData>) playbackService.getList();
+					SimpleDataAdapter adapter = new SimpleDataAdapter(MusicPlay.this, playList);
+					listView.setAdapter(adapter);
+					listView.setOnItemClickListener(onListViewClick);
+					
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
 			
 			try {
-				setStaticView();
+				setDisplayInfo();
 			} catch (RemoteException e) {
 				Log.e("", "", e);
 				e.printStackTrace();
@@ -136,8 +147,8 @@ public class MusicPlay extends Activity {
 		if (bundle != null) {
 			playList = (ArrayList<SimpleData>) bundle
 					.get(PlayService.EXTRA_PLAYLIST);
-			listView.setAdapter(new SimpleDataAdapter(this, playList));
-			listView.setOnItemClickListener(onListViewClick);
+			
+			
 			// from browser
 			if (action == null) {
 
@@ -145,6 +156,11 @@ public class MusicPlay extends Activity {
 				serviceIntent.putExtras(bundle);
 				serviceIntent.setAction(PlayService.ACTION_START_PLAY);
 				startService(serviceIntent);
+			}
+			if(playList!=null){
+				SimpleDataAdapter adapter = new SimpleDataAdapter(this, playList);
+				listView.setAdapter(adapter);
+				listView.setOnItemClickListener(onListViewClick);
 			}
 
 		}
@@ -219,7 +235,7 @@ public class MusicPlay extends Activity {
 
 		return true;
 	}
-
+	
 	private void initViews() {
 		texts.bindView();
 		buttons.bindView();
@@ -235,7 +251,7 @@ public class MusicPlay extends Activity {
 	}
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private void setStaticView() throws RemoteException, NotFoundException {
+	private void setDisplayInfo() throws RemoteException, NotFoundException {
 		int nowIndex = playbackService.getNowIndex();
 		SimpleData item = playList.get(nowIndex);
 		getActionBar().setTitle(
@@ -495,7 +511,7 @@ public class MusicPlay extends Activity {
 				try {
 					SimpleData item = playList.get(playbackService
 							.getNowIndex());
-					Bitmap bm = imageCache.get(item.getId());
+					Bitmap bm = imageCache.get(item.getParentId());
 					String imageUrl = fileHelper.getTempImageUri(bm);
 					Uri uri = Uri.fromFile(new File(imageUrl));
 					shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
@@ -553,7 +569,7 @@ public class MusicPlay extends Activity {
 							@Override
 							public void run() {
 								try {
-									setStaticView();
+									setDisplayInfo();
 								} catch (RemoteException e) {
 									e.printStackTrace();
 									Log.e("", "",e);
@@ -662,7 +678,7 @@ public class MusicPlay extends Activity {
 			case PlayBackService.PLAYER_COMPLETION:// for completion
 
 				if (playList.size() - 1 != playbackService.getNowIndex()) {
-					setStaticView();
+					setDisplayInfo();
 				}
 
 				break;
@@ -712,7 +728,7 @@ public class MusicPlay extends Activity {
 			if(onbind){
 				try {
 					playbackService.playSongAtIndex(arg2);
-					setStaticView();
+					setDisplayInfo();
 				} catch (RemoteException e) {
 					Log.e("", "",e);
 					e.printStackTrace();
@@ -750,7 +766,6 @@ public class MusicPlay extends Activity {
 				try {
 					item = playList.get(playbackService.getNowIndex());
 				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				switch (v.getId()) {

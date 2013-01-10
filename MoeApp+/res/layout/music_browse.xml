@@ -5,18 +5,19 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
-    <!--
+  <!--
    		 注意事项: 
     1.这里ViewPager和 PagerTabStrip都要把包名写全了，不然会ClassNotFount
     2.API中说：在布局xml把PagerTabStrip当做ViewPager的一个子标签来用，不能拿出来，不然还是会报错
 	3.在PagerTabStrip标签中可以用属性android:layout_gravity=TOP|BOTTOM来指定title的位置
 	4.如果要显示出PagerTabStrip某一页的title,需要在ViewPager的adapter中实现getPageTitle(int)
     -->
+   
 
     <android.support.v4.view.ViewPager
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="match_parent"
         android:layout_above="@+id/browser_control"
         android:layout_alignParentTop="true" >
 
@@ -30,7 +31,83 @@
     <RelativeLayout
         android:id="@+id/browser_control"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_alignParentBottom="true" ></RelativeLayout>
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        
+         >
+
+        
+		<LinearLayout android:id="@+id/browser_control_info"
+		    android:layout_width="wrap_content"
+		    android:layout_height="match_parent"
+		    android:onClick="onCTRLClick"
+		    >
+		    
+		    <ImageView
+            android:id="@+id/browser_control_thumb"
+            android:layout_width="60dp"
+            android:layout_height="match_parent"
+           
+            
+            />
+		    <LinearLayout android:layout_width="130dp"
+		        android:layout_height="match_parent"
+		        android:orientation="vertical"
+		        android:paddingLeft="15dp"
+		        >
+		        
+		        <TextView android:layout_height="0dp"
+		            android:layout_width="match_parent"
+		            android:text="1111"
+		            android:layout_weight="3"
+		            android:gravity="center_vertical"
+		            />
+		        <TextView 
+		            android:layout_height="0dp"
+		            android:layout_width="match_parent"
+		            android:text="222"
+		            android:layout_weight="2"
+		            android:gravity="center_vertical"
+		            />
+		        
+		    </LinearLayout>
+		</LinearLayout>
+        <LinearLayout
+            android:gravity="center_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_toRightOf="@+id/browser_control_info" >
+
+            <ImageButton
+                android:id="@+id/browse_ib_prev"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.00"
+                android:background="@drawable/stateful_btn"
+                android:src="@android:drawable/ic_media_previous" 
+                android:onClick="onCTRLClick"
+                />
+			
+            <ImageButton
+                android:id="@+id/browse_ib_pp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/stateful_btn"
+                android:src="@android:drawable/ic_media_play"
+                android:onClick="onCTRLClick"
+                 />
+
+            <ImageButton
+                android:id="@+id/browse_ib_next"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/stateful_btn"
+                android:src="@android:drawable/ic_media_next"
+                android:onClick="onCTRLClick"
+                 />
+        </LinearLayout>
+    </RelativeLayout>
 
 </RelativeLayout>

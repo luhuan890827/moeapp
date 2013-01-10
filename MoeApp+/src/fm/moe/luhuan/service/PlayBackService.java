@@ -1,8 +1,10 @@
 package fm.moe.luhuan.service;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import android.R;
+import android.R.bool;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -40,7 +42,7 @@ public class PlayBackService extends Service{
 	private Notification mNotification;
 	private PendingIntent pIntent;
 	private boolean onbind;
-	private static final int NOTIFICATION_ID =PlayBackService.class.hashCode();
+	//private static final int NOTIFICATION_ID =PlayBackService.class.hashCode();
 	public static final String ACTION_PLAYER_STATE_CHANGE = "player state change";
 	public static final String EXTRA_PLAYLIST = "playList";
 	public static final String EXTRA_PLAYLIST_ID = "playListId";
@@ -187,6 +189,34 @@ public class PlayBackService extends Service{
 		public void stopAsForeGround() throws RemoteException {
 			PlayBackService.this.stopForeground(true);
 		}
+
+		@Override
+		public List<SimpleData> getList() throws RemoteException {
+			return playList;
+		}
+
+		@Override
+		public void playNext() throws RemoteException {
+			if(nowIndex<playList.size()-1){
+				PlayBackService.this.playSongAtIndex(nowIndex+1);
+			}else{
+				PlayBackService.this.playSongAtIndex(0);
+			}
+		}
+
+		@Override
+		public void playPrevious() throws RemoteException {
+			if(nowIndex==0){
+				PlayBackService.this.playSongAtIndex(playList.size()-1);
+			}else{
+				PlayBackService.this.playSongAtIndex(nowIndex-1);
+			}
+		}
+
+		@Override
+		public SimpleData getItem() throws RemoteException {
+			return playList.get(nowIndex);
+		}
 	}
 
 	@Override
@@ -204,8 +234,8 @@ public class PlayBackService extends Service{
 
 		public boolean onError(MediaPlayer mp, int what, int extra) {
 			
-			// Log.e("broadcast", "send");
-			return true;
+			Log.e("playbackservice", "what="+what+",extra="+extra);
+			return false;
 		}
 	};
 	private OnPreparedListener onPlayerPrepared = new OnPreparedListener() {
@@ -239,6 +269,7 @@ public class PlayBackService extends Service{
 
 		public void onBufferingUpdate(MediaPlayer mp, int percent) {
 			Intent broadcast = new Intent(ACTION_PLAYER_STATE_CHANGE);
+			broadcast.putExtra(EXTRA_PLAYER_STATUS, PLAYER_BURRERING);
 			broadcast.putExtra(EXTRA_PLAYER_BUFFERING_PERCENT, percent);
 			sendBroadcast(broadcast);
 			//Log.e("buffered update", percent + "");

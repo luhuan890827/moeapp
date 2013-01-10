@@ -1,12 +1,13 @@
 package fm.moe.luhuan.beans.data;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-public class SimpleData implements Serializable{
+public class SimpleData implements Parcelable{
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
+	
 	private int parentId=-1;
 	private String type;
 	private int id;
@@ -17,6 +18,29 @@ public class SimpleData implements Serializable{
 	private boolean isFav;
 	private String albumnCoverUrl;
 	private String parentTitle;
+	public static final Parcelable.Creator<SimpleData> CREATOR = new Creator<SimpleData>() {
+		
+		@Override
+		public SimpleData[] newArray(int size) {
+			return new SimpleData[size];
+		}
+		
+		@Override
+		public SimpleData createFromParcel(Parcel source) {
+			SimpleData item = new SimpleData();
+			item.parentId = source.readInt();
+			item.type = source.readString();
+			item.id = source.readInt();
+			item.artist = source.readString();
+			item.title = source.readString();
+			item.description = source.readString();
+			item.mp3Url = source.readString();
+			item.isFav = source.readInt()==0?false:true;
+			item.albumnCoverUrl = source.readString();
+			item.parentTitle = source.readString();
+			return item;
+		}
+	};
 	public int getId() {
 		return id;
 	}
@@ -76,6 +100,26 @@ public class SimpleData implements Serializable{
 	}
 	public void setType(String type) {
 		this.type = type;
+	}
+	@Override
+	public int describeContents() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeInt(parentId);
+		dest.writeString(type);
+		dest.writeInt(id);
+		dest.writeString(artist);
+		dest.writeString(title);
+		dest.writeString(description);
+		dest.writeString(mp3Url);
+		dest.writeInt(isFav?1:0);
+		dest.writeString(albumnCoverUrl);
+		dest.writeString(parentTitle);
+		
 	}
 	
 }
