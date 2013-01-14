@@ -55,8 +55,8 @@ public class MoeHttp {
 		Log.e("url", url);
 		if (token != null && !token.isEmpty()) {
 			OAuthRequest req = new OAuthRequest(Verb.GET, url);
-//			req.setConnectTimeout(3000, TimeUnit.MILLISECONDS);
-//			req.setReadTimeout(4000, TimeUnit.MILLISECONDS);
+			req.setConnectTimeout(3000, TimeUnit.MILLISECONDS);
+			req.setReadTimeout(4000, TimeUnit.MILLISECONDS);
 			oService.signRequest(token, req);
 			Response resp = req.send();
 			return resp.getBody();

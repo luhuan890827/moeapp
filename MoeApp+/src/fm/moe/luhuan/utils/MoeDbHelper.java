@@ -1,7 +1,5 @@
 package fm.moe.luhuan.utils;
 
-import java.util.Date;
-
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -29,14 +27,14 @@ public class MoeDbHelper extends SQLiteOpenHelper {
 				+ ",media_path text not null"//6
 				+ ",cover_path text not null"//7
 				+ ",insert_time int not null"//8
+				+",thumb_path text not null"//9
 				+");");
 
 	}
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-		// TODO Auto-generated method stub
-
+		db.execSQL("alter table "+TABLE_NAME+" add column thumb_path text;");
 	}
 	
 

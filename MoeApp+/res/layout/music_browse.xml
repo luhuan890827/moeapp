@@ -29,6 +29,7 @@
     </android.support.v4.view.ViewPager>
 
     <RelativeLayout
+        android:background="@drawable/top_border"
         android:id="@+id/browser_control"
         android:layout_width="match_parent"
         android:layout_height="60dp"
@@ -41,33 +42,39 @@
 		    android:layout_width="wrap_content"
 		    android:layout_height="match_parent"
 		    android:onClick="onCTRLClick"
+		    android:background="@drawable/stateful_btn"
 		    >
 		    
 		    <ImageView
             android:id="@+id/browser_control_thumb"
             android:layout_width="60dp"
             android:layout_height="match_parent"
-           
+           android:padding="2dp"
             
             />
 		    <LinearLayout android:layout_width="130dp"
 		        android:layout_height="match_parent"
 		        android:orientation="vertical"
 		        android:paddingLeft="15dp"
+		        
 		        >
 		        
 		        <TextView android:layout_height="0dp"
 		            android:layout_width="match_parent"
-		            android:text="1111"
+		              style="@style/TextMarquee"
 		            android:layout_weight="3"
 		            android:gravity="center_vertical"
+		            android:id="@+id/browser_control_title"
+		            android:lines="1"
 		            />
 		        <TextView 
 		            android:layout_height="0dp"
 		            android:layout_width="match_parent"
-		            android:text="222"
+		           
 		            android:layout_weight="2"
 		            android:gravity="center_vertical"
+		            android:id="@+id/browser_control_artist"
+		            android:lines="1"
 		            />
 		        
 		    </LinearLayout>
@@ -79,7 +86,7 @@
             android:layout_toRightOf="@+id/browser_control_info" >
 
             <ImageButton
-                android:id="@+id/browse_ib_prev"
+                android:id="@+id/browser_ib_prev"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1.00"
@@ -89,7 +96,7 @@
                 />
 			
             <ImageButton
-                android:id="@+id/browse_ib_pp"
+                android:id="@+id/browser_ib_pp"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -99,7 +106,7 @@
                  />
 
             <ImageButton
-                android:id="@+id/browse_ib_next"
+                android:id="@+id/browser_ib_next"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"

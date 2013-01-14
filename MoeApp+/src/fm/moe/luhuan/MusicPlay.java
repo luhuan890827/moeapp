@@ -2,8 +2,10 @@ package fm.moe.luhuan;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -19,8 +21,11 @@ import fm.moe.luhuan.service.PlayBackService;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.service.QueueDownloadService;
 import fm.moe.luhuan.utils.DataStorageHelper;
+import fm.moe.luhuan.utils.MyUncaughtExceptionHandler;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -65,7 +70,7 @@ import android.widget.Toast;
 
 public class MusicPlay extends Activity {
 
-	public static final int REQUEST_ACTIVITY_FRONT=1;
+	
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("mm:ss");
 	private MoeHttp moeHttp;
 	private CommonHttpHelper commonHttp = new CommonHttpHelper();
@@ -120,6 +125,9 @@ public class MusicPlay extends Activity {
 				e.printStackTrace();
 			}
 		}
+		//MyUncaughtExceptionHandler crashHandler = new MyUncaughtExceptionHandler(getApplicationContext());
+		
+		
 	};
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -146,7 +154,42 @@ public class MusicPlay extends Activity {
 		String action = incomingIntent.getAction();
 		if (bundle != null) {
 			playList = (ArrayList<SimpleData>) bundle
-					.get(PlayService.EXTRA_PLAYLIST);
+					.get(PlayBackService.EXTRA_PLAYLIST);
+			
+			
+			// from browser
+			if (action == null&&!isPlaybackServiceRunning()) {
+
+				Intent serviceIntent = new Intent(this, PlayBackService.class);
+				serviceIntent.putExtras(bundle);
+				
+				startService(serviceIntent);
+			}
+			if(playList!=null){
+				SimpleDataAdapter adapter = new SimpleDataAdapter(this, playList);
+				listView.setAdapter(adapter);
+				listView.setOnItemClickListener(onListViewClick);
+			}else
+			if(!isPlaybackServiceRunning()){
+				Intent i = new Intent(this,MusicBrowse.class);
+				startActivity(i);
+				this.finish();
+			}
+
+		}
+		
+		
+
+	}
+	@Override
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		
+		Bundle bundle = intent.getExtras();
+		String action = intent.getAction();
+		if (bundle != null) {
+			playList = (ArrayList<SimpleData>) bundle
+					.get(PlayBackService.EXTRA_PLAYLIST);
 			
 			
 			// from browser
@@ -154,7 +197,7 @@ public class MusicPlay extends Activity {
 
 				Intent serviceIntent = new Intent(this, PlayBackService.class);
 				serviceIntent.putExtras(bundle);
-				serviceIntent.setAction(PlayService.ACTION_START_PLAY);
+				
 				startService(serviceIntent);
 			}
 			if(playList!=null){
@@ -164,14 +207,12 @@ public class MusicPlay extends Activity {
 			}
 
 		}
-		
-
 	}
-
 	@Override
 	protected void onStart() {
 
 		super.onStart();
+		
 		mHandler.post(refreshPlayingStatusRunnable);
 		Intent bindIntent = new Intent(this, PlayBackService.class);
 		bindService(bindIntent, servConn, BIND_AUTO_CREATE);
@@ -181,7 +222,6 @@ public class MusicPlay extends Activity {
 			try {
 				playbackService.stopAsForeGround();
 			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -223,9 +263,10 @@ public class MusicPlay extends Activity {
 
 	@Override
 	public void onBackPressed() {
+		
 		Intent intent = new Intent(this, MusicBrowse.class);
 		startActivity(intent);
-		super.onBackPressed();
+		
 
 	}
 
@@ -235,7 +276,19 @@ public class MusicPlay extends Activity {
 
 		return true;
 	}
-	
+	private boolean isPlaybackServiceRunning() {
+		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+		List<RunningServiceInfo> services = manager
+				.getRunningServices(Integer.MAX_VALUE);
+		String mServiceName = PlayBackService.class.getName();
+		for (int i = 0; i < services.size(); i++) {
+			if (services.get(i).service.getClassName().equals(mServiceName)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 	private void initViews() {
 		texts.bindView();
 		buttons.bindView();
@@ -282,6 +335,11 @@ public class MusicPlay extends Activity {
 		if (playbackService.isPlayerPrepared()) {
 			texts.fullTime.setText(dateFormat.format(playbackService
 					.getSongDuration()));
+		}else{
+			texts.fullTime.setText("00:00");
+			texts.played.setText("00:00");
+			seekBar.setProgress(0);
+			seekBar.setSecondaryProgress(0);
 		}
 
 		texts.album.setText(item.getParentTitle());
@@ -679,6 +737,9 @@ public class MusicPlay extends Activity {
 
 				if (playList.size() - 1 != playbackService.getNowIndex()) {
 					setDisplayInfo();
+				}else{
+					buttons.pp.setImageDrawable(getResources().getDrawable(
+							android.R.drawable.ic_media_play));
 				}
 
 				break;

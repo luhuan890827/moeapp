@@ -26,7 +26,6 @@ public class JSONUtils {
 				JSONObject t = arr.getJSONObject(i);
 				String key = t.getString("meta_key");
 				String val = t.getString("meta_value");
-				int type = t.getIntValue("meta_type");
 				if (key.contains("¼ò½é")) {
 					description = val;
 				}
@@ -38,6 +37,7 @@ public class JSONUtils {
 		}
 		
 		data.setAlbumnCoverUrl(obj.getJSONObject("wiki_cover").getString("large"));
+		data.setThumbUrl(obj.getJSONObject("wiki_cover").getString("small"));
 		data.setArtist(artist);
 		data.setDescription(description);
 		data.setType(obj.getString("wiki_type"));
@@ -130,6 +130,7 @@ public class JSONUtils {
 		data.setTitle(obj.getString("sub_title"));
 		data.setMp3Url(obj.getString("url"));
 		data.setAlbumnCoverUrl(obj.getJSONObject("cover").getString("large"));
+		data.setThumbUrl(obj.getJSONObject("cover").getString("small"));
 		if(obj.getJSONObject("fav_sub")!=null){
 			data.setFav(true);
 		}

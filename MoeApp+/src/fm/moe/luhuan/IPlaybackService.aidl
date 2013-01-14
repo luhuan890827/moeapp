@@ -14,6 +14,6 @@ boolean isPlayerPlaying();
 void setAsForeGround();
 void seekTo(int n);
 void stopAsForeGround();
-List getList();
+List<SimpleData> getList();
 SimpleData getItem();
 }

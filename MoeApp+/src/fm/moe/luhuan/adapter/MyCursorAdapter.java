@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 
 import android.support.v4.widget.CursorAdapter;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,7 +31,7 @@ public class MyCursorAdapter extends CursorAdapter{
 				.findViewById(R.id.item_title);
 		TextView description = (TextView) ll
 				.findViewById(R.id.item_description);
-		title.setText(cursor.getString(1));
+		title.setText(Html.fromHtml(cursor.getString(1)));
 		String desText = cursor.getString(2);
 		if(desText==null||desText.equals("")){
 			desText="未知艺术家";
@@ -48,7 +49,7 @@ public class MyCursorAdapter extends CursorAdapter{
 				.findViewById(R.id.item_title);
 		TextView description = (TextView) ll
 				.findViewById(R.id.item_description);
-		title.setText(cursor.getString(1));
+		title.setText(Html.fromHtml(cursor.getString(1)));
 		String desText = cursor.getString(2);
 		if(desText==null||desText.equals("")){
 			desText="未知艺术家";

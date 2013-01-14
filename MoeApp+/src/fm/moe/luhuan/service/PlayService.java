@@ -281,7 +281,7 @@ public class PlayService extends Service {
 				prepareSongAtIndex(++nowIndex);
 			}
 
-			new DoPersistThread().start();
+			//new DoPersistThread().start();
 			broadcast.setAction(ACTION_PLAYER_STATE_CHANGE);
 			broadcast.putExtra(EXTRA_PLAYER_STATUS, 1);
 			broadcast.putExtra(EXTRA_NOW_PLAYING_INDEX, nowIndex);
@@ -318,17 +318,17 @@ public class PlayService extends Service {
 		}
 	};
 
-	private class DoPersistThread extends Thread {
-
-		public void run() {
-			try {
-				fileHelper.persistState(playList, nowIndex);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-
-	};
+//	private class DoPersistThread extends Thread {
+//
+//		public void run() {
+//			try {
+//				fileHelper.persistState(playList, nowIndex);
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//
+//	};
 
 	private Runnable playerInfoBroadcastRunnable = new Runnable() {
 

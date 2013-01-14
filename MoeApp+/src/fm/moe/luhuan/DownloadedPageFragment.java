@@ -77,6 +77,7 @@ public class DownloadedPageFragment extends Fragment{
 				data.setParentId(c.getInt(3));
 				data.setParentTitle(c.getString(4));
 				data.setAlbumnCoverUrl(c.getString(7));
+				data.setThumbUrl(c.getString(9));
 				l.add(data);
 			}
 			Intent playIntent = new Intent(getActivity(), MusicPlay.class);

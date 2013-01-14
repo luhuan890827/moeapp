@@ -81,6 +81,12 @@ public class PlayBackService extends Service{
 		
 		return START_NOT_STICKY;
 	}
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		unregisterReceiver(receiver);
+		mPlayer.release();
+	}
 	
 	private void setPlayerListeners() {
 		mPlayer.setOnBufferingUpdateListener(onSongBuffering);
@@ -108,24 +114,26 @@ public class PlayBackService extends Service{
 	}
 	private void sendNotification(int drawableId, String tickerText,
 			String title, String content) {
+		nBuilder.setSmallIcon(drawableId);
+		if(tickerText!=null){
+			nBuilder.setTicker("√»∑Ò“Ù¿÷:" + tickerText);	
+		}
 		
-			nBuilder.setSmallIcon(drawableId);
-			if(tickerText!=null){
-				nBuilder.setTicker("√»∑Ò“Ù¿÷:" + tickerText);	
-			}
-			
-			nBuilder.setContentTitle("√»∑Ò“Ù¿÷:" + title);
-			nBuilder.setContentText(content);
-			mNotification = nBuilder.build();
-			if(!onbind){
+		nBuilder.setContentTitle("√»∑Ò“Ù¿÷:" + title);
+		nBuilder.setContentText(content);
+		mNotification = nBuilder.build();
+		if(!onbind){
 			setAsForeGround();
-			
 		}
 		
 		
 		
 	}
 	private void setAsForeGround(){
+		if(mNotification==null){
+			SimpleData item = playList.get(nowIndex);
+			sendNotification(R.drawable.ic_media_play, item.getTitle(), "’˝‘⁄≤•∑≈", item.getTitle());
+		}
 		startForeground(sID, mNotification);
 		ntfManager.cancelAll();
 		

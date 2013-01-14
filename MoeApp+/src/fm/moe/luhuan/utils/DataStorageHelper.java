@@ -42,6 +42,7 @@ public class DataStorageHelper {
 		}
 		ctx = c;
 		dbHelper = new MoeDbHelper(c);
+		
 	}
 	public Bitmap getItemCoverBitmap(SimpleData item){
 		Bitmap bm = null;
@@ -83,6 +84,7 @@ public class DataStorageHelper {
 		values.put("parent_id", item.getParentId());
 		values.put("parent_title", item.getParentTitle());
 		values.put("is_fav", item.isFav());
+		values.put("thumb_path", item.getThumbUrl());
 		db.insert(MoeDbHelper.TABLE_NAME, null, values);
 		db.close();
 	}
@@ -134,35 +136,5 @@ public class DataStorageHelper {
 		db.update(MoeDbHelper.TABLE_NAME, cv, "_id=?", new String[]{item.getId()+""});
 		db.close();
 	}
-	public void persistState(List<SimpleData> list,int n) throws IOException{
-		File status = new File(ctx.getCacheDir(),".playstatus");
-		JSONObject jo = new JSONObject();
-		
-		jo.put("index", n);
-		jo.put("list", list);
-		
-		FileOutputStream fos = new FileOutputStream(status);
-		fos.write(jo.toJSONString().getBytes());
-		fos.close();
-	}
-	public Object[] getPersistedState() throws IOException{
-		File status = new File(ctx.getCacheDir(),".playstatus");
-		byte[] data = new byte[(int) status.length()];
-		FileInputStream fis = new FileInputStream(status);
-		fis.read(data);
-		String json = new String(data);
-		fis.close();
-		JSONObject jo = JSON.parseObject(json);
-		
-		JSONArray aList = jo.getJSONArray("list");
-		
-		ArrayList<SimpleData> list = new ArrayList<SimpleData>();
-		
-		for(int i = 0;i<aList.size();i++){
-			SimpleData item = JSON.parseObject(aList.getString(i), SimpleData.class);
-			list.add(item);
-		}
-		
-		return new Object[]{jo.getInteger("index"),list};
-	}
+	
 }
