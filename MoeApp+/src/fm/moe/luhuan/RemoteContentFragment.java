@@ -14,6 +14,7 @@ import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.MoeHttp;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.utils.JSONUtils;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
@@ -47,14 +48,13 @@ public abstract class RemoteContentFragment extends Fragment {
 	protected ListView listView;
 	protected Stack<ListViewDataset> backStack = new Stack<ListViewDataset>();
 	protected AsyncTask asyncTask;
-	
+
 	private final String PLAY_LIST_DATA_URL = "http://moe.fm/listen/playlist?api=json&";
 	public static final String EXTRA_GROUP_TAGS = "group tags";
 
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
-
-		super.onCreate(savedInstanceState);
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
 		netInfo = ((ConnectivityManager) getActivity().getSystemService(
 				Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
 		inflater = getActivity().getLayoutInflater();
@@ -62,15 +62,27 @@ public abstract class RemoteContentFragment extends Fragment {
 				R.layout.progress_view, null, false);
 		loadMoreBtn = (LinearLayout) inflater.inflate(R.layout.load_more_view,
 				null, false);
-		loadMoreBtn.setOnClickListener(onLoadMoreBtnClick);
-		listView = new ListView(getActivity());
-		Bundle args = getArguments();
-		String[] tags = args.getStringArray(EXTRA_GROUP_TAGS);
-		ListAdapter adapter = new ArrayAdapter<String>(getActivity(),
-				R.layout.big_text_item, tags);
-		
-		listView.setAdapter(adapter);
+
 		http = new MoeHttp(getActivity());
+		listView = new ListView(getActivity());
+		loadMoreBtn.setOnClickListener(onLoadMoreBtnClick);
+	}
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+
+		super.onCreate(savedInstanceState);
+
+		Bundle args = getArguments();
+		if (args != null) {
+			String[] tags = args.getStringArray(EXTRA_GROUP_TAGS);
+			if (tags != null) {
+				ListAdapter adapter = new ArrayAdapter<String>(getActivity(),
+						R.layout.big_text_item, tags);
+
+				listView.setAdapter(adapter);
+			}
+		}
 
 	}
 
@@ -124,13 +136,14 @@ public abstract class RemoteContentFragment extends Fragment {
 			Intent playIntent = new Intent(getActivity(), MusicPlay.class);
 			Bundle bundle = new Bundle();
 
-			bundle.putSerializable(PlayService.EXTRA_PLAYLIST, (ArrayList<SimpleData>) playList);
+			bundle.putSerializable(PlayService.EXTRA_PLAYLIST,
+					(ArrayList<SimpleData>) playList);
 			bundle.putInt(PlayService.EXTRA_SELECTED_INDEX, arg2);
-			bundle.putString(PlayService.EXTRA_PLAYLIST_ID, arg0.getTag(R.string.play_list_id)
-					+ "");
+			bundle.putString(PlayService.EXTRA_PLAYLIST_ID,
+					arg0.getTag(R.string.play_list_id) + "");
 			bundle.putBoolean(PlayService.EXTRA_IF_NEED_NETWORK, true);
 			playIntent.putExtras(bundle);
-			
+
 			startActivity(playIntent);
 
 		}
@@ -140,7 +153,8 @@ public abstract class RemoteContentFragment extends Fragment {
 		public void onClick(View v) {
 			asyncTask = new LoadMoreContent();
 			asyncTask.execute(v);
-			loadMoreBtn.findViewById(R.id.load_more_progress).setVisibility(View.VISIBLE);
+			loadMoreBtn.findViewById(R.id.load_more_progress).setVisibility(
+					View.VISIBLE);
 		}
 	};
 
@@ -154,13 +168,13 @@ public abstract class RemoteContentFragment extends Fragment {
 		dSet.listener = listView.getOnItemClickListener();
 		listView.setOnItemClickListener(null);
 		String adapterClassName = listView.getAdapter().getClass().getName();
-		if(adapterClassName.indexOf("WrapperListAdapter")>=0){
+		if (adapterClassName.indexOf("WrapperListAdapter") >= 0) {
 			dSet.adapter = ((WrapperListAdapter) listView.getAdapter())
 					.getWrappedAdapter();
-		}else{
+		} else {
 			dSet.adapter = listView.getAdapter();
 		}
-		
+
 		dSet.adapter = listView.getAdapter();
 		backStack.push(dSet);
 	}
@@ -180,7 +194,7 @@ public abstract class RemoteContentFragment extends Fragment {
 		}
 
 	}
-	
+
 	class ErrToastRunnable implements Runnable {
 		private String info;
 
@@ -200,6 +214,7 @@ public abstract class RemoteContentFragment extends Fragment {
 
 	class LoadWikiContent extends AsyncTask<Object, Object, List<SimpleData>> {
 		private JSONObject information;
+
 		@Override
 		protected List<SimpleData> doInBackground(Object... params) {
 			View v = (View) params[0];
@@ -208,76 +223,87 @@ public abstract class RemoteContentFragment extends Fragment {
 			List<SimpleData> playList = null;
 			try {
 				String json = http.oauthRequest(url);
-				information = JSON.parseObject(json).getJSONObject("response").getJSONObject("information");
+				information = JSON.parseObject(json).getJSONObject("response")
+						.getJSONObject("information");
 				playList = JSONUtils.getSimpleDataFromPlayList(json);
 			} catch (SocketTimeoutException e) {
 				e.printStackTrace();
 				sendErrToast("网络连接超时");
-			}catch (Exception e) {
+			} catch (Exception e) {
 				sendErrToast("未知错误");
-				Log.e("", "",e);
+				Log.e("", "", e);
 			}
-			
+
 			return playList;
 		}
+
 		@Override
 		protected void onPostExecute(List<SimpleData> result) {
 			super.onPostExecute(result);
-			if(result!=null){
+			if (result != null) {
 				listView.removeFooterView(loadingProgress);
 				boolean hasNext = information.getBooleanValue("may_have_next");
-				if(hasNext){
+				if (hasNext) {
 					String nextUrl = information.getString("next_url");
-					loadMoreBtn.setTag(R.string.more_btn_url,nextUrl);
+					loadMoreBtn.setTag(R.string.more_btn_url, nextUrl);
 					loadMoreBtn.setVisibility(View.VISIBLE);
 					listView.addFooterView(loadMoreBtn);
 				}
-				SimpleDataAdapter adapter = new SimpleDataAdapter(getActivity(), result);
+				SimpleDataAdapter adapter = new SimpleDataAdapter(
+						getActivity(), result);
 				listView.setAdapter(adapter);
 				listView.setOnItemClickListener(onPlaylistItemClick);
-			}else{
+			} else {
 				backView();
 			}
 		}
 
 	}
-	class LoadMoreContent extends AsyncTask<Object, Object, List<SimpleData>>{
-		JSONObject information ;
+
+	class LoadMoreContent extends AsyncTask<Object, Object, List<SimpleData>> {
+		JSONObject information;
+
 		@Override
 		protected List<SimpleData> doInBackground(Object... params) {
-			String url = (String) ((View)params[0]).getTag(R.string.more_btn_url);
+			String url = (String) ((View) params[0])
+					.getTag(R.string.more_btn_url);
 			List<SimpleData> attachedList = null;
 			try {
 				String json = http.oauthRequest(url);
-				information = JSON.parseObject(json).getJSONObject("response").getJSONObject("information");
+				information = JSON.parseObject(json).getJSONObject("response")
+						.getJSONObject("information");
 				attachedList = JSONUtils.getSimpleDataFromPlayList(json);
 			} catch (SocketTimeoutException e) {
 				sendErrToast("网络连接超时");
 				e.printStackTrace();
-			}catch (Exception e) {
-				Log.e("", "",e);
+			} catch (Exception e) {
+				Log.e("", "", e);
 			}
-			
+
 			return attachedList;
 		}
+
 		@Override
 		protected void onPostExecute(List<SimpleData> result) {
 			super.onPostExecute(result);
-			loadMoreBtn.findViewById(R.id.load_more_progress).setVisibility(View.GONE);
-			if(result!=null){
-				((SimpleDataAdapter)((WrapperListAdapter)listView.getAdapter()).getWrappedAdapter()).getData().addAll(result);
+			loadMoreBtn.findViewById(R.id.load_more_progress).setVisibility(
+					View.GONE);
+			if (result != null) {
+				((SimpleDataAdapter) ((WrapperListAdapter) listView
+						.getAdapter()).getWrappedAdapter()).getData().addAll(
+						result);
 				listView.invalidate();
 				boolean hasNext = information.getBooleanValue("may_have_next");
-				if(hasNext){
+				if (hasNext) {
 					String nextUrl = information.getString("next_url");
-					loadMoreBtn.setTag(R.string.more_btn_url,nextUrl);
-					
-				}else{
-					listView.removeFooterView(loadMoreBtn);		
+					loadMoreBtn.setTag(R.string.more_btn_url, nextUrl);
+
+				} else {
+					listView.removeFooterView(loadMoreBtn);
 				}
-				
+
 			}
 		}
-		
+
 	}
 }

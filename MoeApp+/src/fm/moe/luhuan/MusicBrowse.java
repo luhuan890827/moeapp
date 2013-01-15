@@ -13,8 +13,11 @@ import fm.moe.luhuan.utils.DataStorageHelper;
 import fm.moe.luhuan.utils.MoeDbHelper;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Resources.NotFoundException;
 import android.database.sqlite.SQLiteDatabase;
@@ -45,6 +48,25 @@ public class MusicBrowse extends FragmentActivity {
 	private ImageButton pp;
 	private TextView title;
 	private TextView artist;
+	private BroadcastReceiver receiver =new BroadcastReceiver() {
+		
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			int playerState = intent.getIntExtra(PlayBackService.EXTRA_PLAYER_STATUS, 0);
+			if(playerState==PlayBackService.PLAYER_PREPARED){
+				if(onbind){
+					SimpleData data = null;
+					try {
+						data = playbackService.getCurrentItem();
+					} catch (RemoteException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					setCTRLArea(data);
+				}
+			}
+		}
+	};
 	private ServiceConnection conn = new ServiceConnection() {
 
 		@Override
@@ -64,7 +86,7 @@ public class MusicBrowse extends FragmentActivity {
 					pp.setImageDrawable(getResources().getDrawable(
 							android.R.drawable.ic_media_play));
 				}
-				SimpleData data = playbackService.getItem();
+				SimpleData data = playbackService.getCurrentItem();
 				setCTRLArea(data);
 			} catch (RemoteException e) {
 				Log.e("", "", e);
@@ -76,7 +98,9 @@ public class MusicBrowse extends FragmentActivity {
 
 	@Override
 	protected void onCreate(Bundle arg0) {
+
 		super.onCreate(arg0);
+		
 		setContentView(R.layout.music_browse);
 		mViewPager = (ViewPager) findViewById(R.id.view_pager);
 		mAdapter = new MyPagerAdapter(getSupportFragmentManager(),
@@ -88,6 +112,7 @@ public class MusicBrowse extends FragmentActivity {
 		thumb = (ImageView) findViewById(R.id.browser_control_thumb);
 		title = (TextView) findViewById(R.id.browser_control_title);
 		artist = (TextView) findViewById(R.id.browser_control_artist);
+		
 	}
 
 	@Override
@@ -113,7 +138,11 @@ public class MusicBrowse extends FragmentActivity {
 	@Override
 	protected void onStart() {
 		super.onStart();
+		Log.e("", "on start");
 		if (isPlaybackServiceRunning()) {
+			IntentFilter iFilter = new IntentFilter();
+			iFilter.addAction(PlayBackService.ACTION_PLAYER_STATE_CHANGE);
+			registerReceiver(receiver, iFilter);
 			controlSet.setVisibility(View.VISIBLE);
 			Intent bindIntent = new Intent(this, PlayBackService.class);
 			bindService(bindIntent, conn, BIND_AUTO_CREATE);
@@ -121,6 +150,11 @@ public class MusicBrowse extends FragmentActivity {
 			controlSet.setVisibility(View.GONE);
 		}
 
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
 	}
 
 	@Override
@@ -132,11 +166,15 @@ public class MusicBrowse extends FragmentActivity {
 					playbackService.setAsForeGround();
 				}
 			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			unbindService(conn);
+			unbindService(conn);unregisterReceiver(receiver);
 		}
+	}
+
+	@Override
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
 	}
 
 	private void setCTRLArea(final SimpleData data) {
@@ -166,8 +204,8 @@ public class MusicBrowse extends FragmentActivity {
 								getApplicationContext());
 						SQLiteDatabase db = dh.getWritableDatabase();
 						db.execSQL("update " + MoeDbHelper.TABLE_NAME
-								+ " set thumb_path='" + thumbUrl + "' where _id="
-								+ data.getId());
+								+ " set thumb_path='" + thumbUrl
+								+ "' where _id=" + data.getId());
 						db.close();
 					} catch (SocketTimeoutException e) {
 						e.printStackTrace();
@@ -184,7 +222,11 @@ public class MusicBrowse extends FragmentActivity {
 			}
 		}.start();
 	}
-
+	public void addItemToPlayService(SimpleData item) throws RemoteException{
+		if(onbind){
+			playbackService.addItem(item);
+		}
+	}
 	private boolean isPlaybackServiceRunning() {
 		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
 		List<RunningServiceInfo> services = manager

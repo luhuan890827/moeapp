@@ -1,6 +1,5 @@
 package fm.moe.luhuan.utils;
 
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +23,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Bitmap.CompressFormat;
+import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 
 public class DataStorageHelper {
@@ -31,6 +31,7 @@ public class DataStorageHelper {
 	private File coverDir;
 	private MoeDbHelper dbHelper;
 	private Context ctx;
+
 	public DataStorageHelper(Context c) {
 		songDir = new File(c.getExternalFilesDir(null), "song");
 		if (!songDir.exists()) {
@@ -42,44 +43,52 @@ public class DataStorageHelper {
 		}
 		ctx = c;
 		dbHelper = new MoeDbHelper(c);
-		
+
 	}
-	public Bitmap getItemCoverBitmap(SimpleData item){
+
+	public Bitmap getItemCoverBitmap(SimpleData item) {
 		Bitmap bm = null;
-		File f = new File(coverDir,item.getParentId()+".jpg");
-		if(f.exists()){
+		File f = new File(coverDir, item.getParentId() + ".jpg");
+		if (f.exists()) {
 			bm = BitmapFactory.decodeFile(f.getAbsolutePath());
 		}
 		return bm;
 	}
-	public String getItemMp3Url(SimpleData item){
-		String url=null;
+
+	public String getItemMp3Url(SimpleData item) {
+		String url = null;
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		Cursor c = db.rawQuery("select media_path from "+MoeDbHelper.TABLE_NAME+" where _id="+item.getId(), null);
-		if(c.getCount()>0){
+		Cursor c = db.rawQuery("select media_path from "
+				+ MoeDbHelper.TABLE_NAME + " where _id=" + item.getId(), null);
+		if (c.getCount() > 0) {
 			c.moveToFirst();
 			url = c.getString(0);
-		}else{
+		} else {
 			url = item.getMp3Url();
 		}
 		db.close();
 		return url;
 	}
-	public boolean isItemSaved(SimpleData item){
+
+	public boolean isItemSaved(SimpleData item) {
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		Cursor c = db.rawQuery("select media_path from "+MoeDbHelper.TABLE_NAME+" where _id="+item.getId(), null);
-		
-		return c.getCount()>0;
+		Cursor c = db.rawQuery("select media_path from "
+				+ MoeDbHelper.TABLE_NAME + " where _id=" + item.getId(), null);
+
+		return c.getCount() > 0;
 	}
-	public void insertItemIntoDb(SimpleData item){
+
+	public void insertItemIntoDb(SimpleData item) {
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 
 		ContentValues values = new ContentValues();
 		values.put("_id", item.getId());
 		values.put("title", item.getTitle());
 		values.put("artist", item.getArtist());
-		values.put("media_path", songDir.getAbsolutePath()+"/"+item.getId()+".mp3");
-		values.put("cover_path", coverDir.getAbsolutePath()+"/"+item.getParentId()+".jpg");
+		values.put("media_path", songDir.getAbsolutePath() + "/" + item.getId()
+				+ ".mp3");
+		values.put("cover_path",
+				coverDir.getAbsolutePath() + "/" + item.getParentId() + ".jpg");
 		values.put("insert_time", (new Date()).getTime());
 		values.put("parent_id", item.getParentId());
 		values.put("parent_title", item.getParentTitle());
@@ -88,8 +97,9 @@ public class DataStorageHelper {
 		db.insert(MoeDbHelper.TABLE_NAME, null, values);
 		db.close();
 	}
-	public void saveCover(SimpleData item,Bitmap bm){
-		File cover = new File(coverDir,item.getParentId()+".jpg");
+
+	public void saveCover(SimpleData item, Bitmap bm) {
+		File cover = new File(coverDir, item.getParentId() + ".jpg");
 		FileOutputStream os = null;
 		try {
 			os = new FileOutputStream(cover);
@@ -99,42 +109,106 @@ public class DataStorageHelper {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
-		
+
 	}
-	public int getSongFileLength(SimpleData item){
-		File song = new File(songDir, item.getId()+".mp3");
+
+	public int getSongFileLength(SimpleData item) {
+		File song = new File(songDir, item.getId() + ".mp3");
 		return (int) song.length();
 	}
-	public void writeDataToSong(SimpleData item,byte[] data, int length) {
-		File song = new File(songDir, item.getId()+".mp3");
-		try{
-			OutputStream os = new FileOutputStream(song,true);
+
+	public void writeDataToSong(SimpleData item, byte[] data, int length) {
+		File song = new File(songDir, item.getId() + ".mp3");
+		try {
+			OutputStream os = new FileOutputStream(song, true);
 			os.write(data);
 			os.close();
-		}catch(Exception e){
+		} catch (Exception e) {
 			Log.e("FileStorageHelper", "write data to song err");
 		}
-		
+
 	}
-	public String getTempImageUri(Bitmap bm) throws IOException{
-		
+
+	public String getTempImageUri(Bitmap bm) throws IOException {
+
 		ByteArrayOutputStream bas = new ByteArrayOutputStream();
 		bm.compress(CompressFormat.JPEG, 100, bas);
 		File tempFile = new File(ctx.getExternalCacheDir(), "tempImage.jpg");
 		OutputStream os = new FileOutputStream(tempFile);
 		os.write(bas.toByteArray());
 		os.close();
-		
+
 		return tempFile.getAbsolutePath();
 	}
-	public void updateFav (SimpleData item){
+
+	public void updateFav(SimpleData item) {
 		ContentValues cv = new ContentValues();
 		cv.put("is_fav", item.isFav());
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		db.update(MoeDbHelper.TABLE_NAME, cv, "_id=?", new String[]{item.getId()+""});
+		db.update(MoeDbHelper.TABLE_NAME, cv, "_id=?",
+				new String[] { item.getId() + "" });
 		db.close();
 	}
-	
+
+	public boolean deleteItemById(int id) {
+		SQLiteDatabase db = dbHelper.getWritableDatabase();
+		db.delete(MoeDbHelper.TABLE_NAME, " _id=?", new String[] { id + "" });
+		db.close();
+		File toDel = new File(songDir, id + ".mp3");
+		return toDel.delete();
+	}
+
+	public List<SimpleData> getDownloadedList() {
+		SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+		Cursor c = db.rawQuery("select * from " + MoeDbHelper.TABLE_NAME
+				+ " order by insert_time", null);
+
+		List<SimpleData> l = new ArrayList<SimpleData>();
+
+		while (c.moveToNext()) {
+			SimpleData data = new SimpleData();
+			data.setAlbumnCoverUrl(c.getString(7));
+			data.setArtist(c.getString(2));
+			if (c.getLong(5) == 1) {
+				data.setFav(true);
+			}
+			data.setTitle(c.getString(1));
+			data.setId(c.getInt(0));
+			data.setMp3Url(c.getString(6));
+			data.setParentId(c.getInt(3));
+			data.setParentTitle(c.getString(4));
+			data.setAlbumnCoverUrl(c.getString(7));
+			data.setThumbUrl(c.getString(9));
+			l.add(data);
+		}
+		db.close();
+		return l;
+
+	}
+
+	public SimpleData getItemById(int id) {
+		SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+		Cursor c = db.rawQuery("select * from " + MoeDbHelper.TABLE_NAME
+				+ " order by insert_time where _id=" + id, null);
+		if (c.moveToFirst()) {
+			SimpleData data = new SimpleData();
+			data.setAlbumnCoverUrl(c.getString(7));
+			data.setArtist(c.getString(2));
+			if (c.getLong(5) == 1) {
+				data.setFav(true);
+			}
+			data.setTitle(c.getString(1));
+			data.setId(c.getInt(0));
+			data.setMp3Url(c.getString(6));
+			data.setParentId(c.getInt(3));
+			data.setParentTitle(c.getString(4));
+			data.setAlbumnCoverUrl(c.getString(7));
+			data.setThumbUrl(c.getString(9));
+			return data;
+		}
+		return null;
+	}
+
 }

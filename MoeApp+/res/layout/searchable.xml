@@ -24,10 +24,9 @@
             android:text="载入中..." />
     </LinearLayout>
 
-     <ListView
-        android:id="@+id/result_album_list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-    </ListView>
+   <FrameLayout android:id="@+id/searchable_frag"
+       android:layout_width="match_parent"
+       android:layout_height="match_parent"
+       ></FrameLayout>
 
 </LinearLayout>

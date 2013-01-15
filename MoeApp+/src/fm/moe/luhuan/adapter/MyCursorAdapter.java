@@ -37,6 +37,7 @@ public class MyCursorAdapter extends CursorAdapter{
 			desText="未知艺术家";
 		}
 		description.setText(cursor.getString(2));
+		ll.setTag(cursor.getInt(0));
 		return ll;
 		
 	}
@@ -55,5 +56,6 @@ public class MyCursorAdapter extends CursorAdapter{
 			desText="未知艺术家";
 		}
 		description.setText(desText);
+		ll.setTag(cursor.getInt(0));
 	}
 }

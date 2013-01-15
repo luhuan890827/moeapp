@@ -222,9 +222,21 @@ public class PlayBackService extends Service{
 		}
 
 		@Override
-		public SimpleData getItem() throws RemoteException {
+		public SimpleData getCurrentItem() throws RemoteException {
 			return playList.get(nowIndex);
 		}
+
+		@Override
+		public int getListSize() throws RemoteException {
+			return playList.size();
+		}
+
+		@Override
+		public void addItem(SimpleData item) throws RemoteException {
+			playList.add(item);
+		}
+		
+		
 	}
 
 	@Override

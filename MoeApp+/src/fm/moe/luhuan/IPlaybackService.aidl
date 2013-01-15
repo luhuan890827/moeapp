@@ -15,5 +15,7 @@ void setAsForeGround();
 void seekTo(int n);
 void stopAsForeGround();
 List<SimpleData> getList();
-SimpleData getItem();
+SimpleData getCurrentItem();
+int getListSize();
+void addItem(in SimpleData item);
 }

@@ -145,7 +145,7 @@ public class SimpleData implements Parcelable {
 		dest.writeString(parentTitle);
 		dest.writeString(thumbUrl);
 	}
-
+	
 	public String getThumbUrl() {
 		return thumbUrl;
 	}
@@ -153,5 +153,11 @@ public class SimpleData implements Parcelable {
 	public void setThumbUrl(String thumbUrl) {
 		this.thumbUrl = thumbUrl;
 	}
+
+//	public SimpleData readFromParcel(Parcel source) {
+//		return null;
+//	}
+
+	
 
 }

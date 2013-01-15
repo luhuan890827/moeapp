@@ -7,19 +7,34 @@ import fm.moe.luhuan.service.PlayBackService;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Looper;
 import android.util.Log;
 
 public class MyUncaughtExceptionHandler implements UncaughtExceptionHandler{
 	private Context ctx;
-	public  MyUncaughtExceptionHandler(Context c){
+	private static MyUncaughtExceptionHandler instance = new MyUncaughtExceptionHandler();
+	private UncaughtExceptionHandler defaultHandler;
+	private  MyUncaughtExceptionHandler(){
+	}
+	public static MyUncaughtExceptionHandler getInstance (){
+		return instance;
+	}
+	public void bind(Context c){
 		ctx = c;
+		defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
 		Thread.setDefaultUncaughtExceptionHandler(this);
 	}
 	@Override
 	public void uncaughtException(Thread thread, Throwable ex) {
-		Log.e("", "",ex);
+		//Log.e("", "",ex);
+		
+		
 		ctx.stopService(new Intent(ctx, PlayBackService.class));
-		ctx.startActivity(new Intent(ctx, MusicBrowse.class));
+		Intent i = new Intent(ctx, MusicBrowse.class) ;
+		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		ctx.startActivity(i);
+		Looper.loop();
+		//defaultHandler.uncaughtException(thread, ex);
 	}
 
 }
