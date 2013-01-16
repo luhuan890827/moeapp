@@ -29,7 +29,8 @@ public class ExplorePageFragment extends RemoteContentFragment {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		listView.setOnItemClickListener(onGroupClick);
-		Log.e("fragment", "oncreate");
+		//Log.e("fragment", "oncreate");
+		
 	}
 
 	private OnItemClickListener onGroupClick = new OnItemClickListener() {

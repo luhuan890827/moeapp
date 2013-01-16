@@ -191,7 +191,7 @@ public class DataStorageHelper {
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 
 		Cursor c = db.rawQuery("select * from " + MoeDbHelper.TABLE_NAME
-				+ " order by insert_time where _id=" + id, null);
+				+ " where _id=" + id + " order by insert_time", null);
 		if (c.moveToFirst()) {
 			SimpleData data = new SimpleData();
 			data.setAlbumnCoverUrl(c.getString(7));

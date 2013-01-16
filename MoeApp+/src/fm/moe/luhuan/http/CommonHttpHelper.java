@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -24,34 +25,29 @@ public class CommonHttpHelper {
 		client = new DefaultHttpClient(params);
 	}
 
-	public Bitmap getBitmap(String url) {
+	public Bitmap getBitmap(String url) throws IllegalStateException, IOException {
 		HttpGet request = new HttpGet(url);
 		Bitmap bm = null;
-		try {
+	
 			HttpResponse response = client.execute(request);
 			HttpEntity entity = response.getEntity();
 			InputStream inStream = entity.getContent();
 			bm = BitmapFactory.decodeStream(inStream);
-		} catch (Exception e) {
-			Log.e("CommonHttpHelper", "getBitmap");
-		}
+		
 
 		return bm;
 	}
 
-	public InputStream downloadRanged(String url, int start, int end) {
+	public InputStream downloadRanged(String url, int start, int end) throws ClientProtocolException, IOException {
 		InputStream is = null;
 		HttpGet get = new HttpGet(url);
 		get.setHeader("range", "bytes=" + start + "-" + end);
 		HttpResponse resp = null;
 
-		try {
+		
 			resp = client.execute(get);
 			is = resp.getEntity().getContent();
-		} catch (IOException e) {
-			//Log.e("commonHttpHelper", "downloadRanged");
-			//e.printStackTrace();
-		}
+		
 
 		return is;
 	}

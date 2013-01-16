@@ -9,6 +9,8 @@ import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 
+import org.apache.http.client.ClientProtocolException;
+
 import fm.moe.luhuan.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.CommonHttpHelper;
@@ -71,13 +73,9 @@ public class QueueDownloadService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (intent != null) {
-			// List<SimpleData> list = (List<SimpleData>) intent
-			// .getSerializableExtra(EXTRA_SONG_ITEM_LIST);
-			// list = intent.getParcelableArrayListExtra(name);
 			SimpleData item = (SimpleData) intent
 					.getParcelableExtra(EXTRA_SONG_ITEM);
 			addTask(item);
-			// addTasks(list);
 			startTasks();
 		}
 		return START_NOT_STICKY;
@@ -165,8 +163,17 @@ public class QueueDownloadService extends Service {
 				// consider custom the view of the notification to show the
 				// download progress
 				Log.e("download", nStart + "");
-				BufferedInputStream bis = new BufferedInputStream(
-						http.downloadRanged(item.getMp3Url(), nStart, fLength));
+				BufferedInputStream bis = null;
+				try {
+					bis = new BufferedInputStream(
+							http.downloadRanged(item.getMp3Url(), nStart, fLength));
+				} catch (ClientProtocolException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				try {
 					while ((nRead = bis.read(data, 0, 1024 * 8)) > 0) {
 
@@ -189,7 +196,16 @@ public class QueueDownloadService extends Service {
 			}
 
 			if (fileHelper.getItemCoverBitmap(item) == null) {
-				Bitmap bm = http.getBitmap(item.getAlbumnCoverUrl());
+				Bitmap bm = null;
+				try {
+					bm = http.getBitmap(item.getAlbumnCoverUrl());
+				} catch (IllegalStateException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				fileHelper.saveCover(item, bm);
 			}
 

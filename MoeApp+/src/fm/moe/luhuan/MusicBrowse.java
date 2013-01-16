@@ -1,18 +1,13 @@
 package fm.moe.luhuan;
 
 import java.net.SocketTimeoutException;
-import java.util.List;
-
 import com.alibaba.fastjson.JSON;
-
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.CommonHttpHelper;
 import fm.moe.luhuan.http.MoeHttp;
 import fm.moe.luhuan.service.PlayBackService;
-import fm.moe.luhuan.utils.DataStorageHelper;
+import fm.moe.luhuan.utils.AppContextUtils;
 import fm.moe.luhuan.utils.MoeDbHelper;
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -37,6 +32,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MusicBrowse extends FragmentActivity {
 	private FragmentPagerAdapter mAdapter;
@@ -59,7 +55,7 @@ public class MusicBrowse extends FragmentActivity {
 					try {
 						data = playbackService.getCurrentItem();
 					} catch (RemoteException e) {
-						// TODO Auto-generated catch block
+						Log.e("", "",e);
 						e.printStackTrace();
 					}
 					setCTRLArea(data);
@@ -79,15 +75,19 @@ public class MusicBrowse extends FragmentActivity {
 			onbind = true;
 			playbackService = IPlaybackService.Stub.asInterface(service);
 			try {
-				if (playbackService.isPlayerPlaying()) {
-					pp.setImageDrawable(getResources().getDrawable(
-							android.R.drawable.ic_media_pause));
-				} else {
-					pp.setImageDrawable(getResources().getDrawable(
-							android.R.drawable.ic_media_play));
+				if(playbackService.getListSize()>0){
+					if (playbackService.isPlayerPlaying()) {
+						pp.setImageDrawable(getResources().getDrawable(
+								android.R.drawable.ic_media_pause));
+					} else {
+						pp.setImageDrawable(getResources().getDrawable(
+								android.R.drawable.ic_media_play));
+					}
+					SimpleData data = playbackService.getCurrentItem();
+					setCTRLArea(data);
+					controlSet.setVisibility(View.VISIBLE);
 				}
-				SimpleData data = playbackService.getCurrentItem();
-				setCTRLArea(data);
+				
 			} catch (RemoteException e) {
 				Log.e("", "", e);
 				e.printStackTrace();
@@ -120,7 +120,7 @@ public class MusicBrowse extends FragmentActivity {
 		if (mViewPager.getCurrentItem() < 2) {
 			RemoteContentFragment rf = (RemoteContentFragment) getCurrentFragment();
 			if (!rf.backView()) {
-				super.onBackPressed();
+				this.finish();
 			}
 		} else {
 			this.finish();
@@ -137,16 +137,17 @@ public class MusicBrowse extends FragmentActivity {
 
 	@Override
 	protected void onStart() {
+		onbind =false;
 		super.onStart();
-		Log.e("", "on start");
-		if (isPlaybackServiceRunning()) {
+		if (AppContextUtils.isPlaybackServiceRunning(getApplicationContext())) {
 			IntentFilter iFilter = new IntentFilter();
 			iFilter.addAction(PlayBackService.ACTION_PLAYER_STATE_CHANGE);
 			registerReceiver(receiver, iFilter);
-			controlSet.setVisibility(View.VISIBLE);
+			
 			Intent bindIntent = new Intent(this, PlayBackService.class);
 			bindService(bindIntent, conn, BIND_AUTO_CREATE);
 		} else {
+			
 			controlSet.setVisibility(View.GONE);
 		}
 
@@ -161,15 +162,10 @@ public class MusicBrowse extends FragmentActivity {
 	protected void onStop() {
 		super.onStop();
 		if (onbind) {
-			try {
-				if (playbackService.isPlayerPlaying()) {
-					playbackService.setAsForeGround();
-				}
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
-			unbindService(conn);unregisterReceiver(receiver);
+			unbindService(conn);
+			unregisterReceiver(receiver);
 		}
+		
 	}
 
 	@Override
@@ -211,35 +207,50 @@ public class MusicBrowse extends FragmentActivity {
 						e.printStackTrace();
 					}
 				}
-				final Bitmap bm = http.getBitmap(thumbUrl);
-				thumb.post(new Runnable() {
+				try{
+					final Bitmap bm = http.getBitmap(thumbUrl);
+					thumb.post(new Runnable() {
 
-					@Override
-					public void run() {
-						thumb.setImageBitmap(bm);
-					}
-				});
+						@Override
+						public void run() {
+							thumb.setImageBitmap(bm);
+						}
+					});
+				}catch(Exception e){
+					Log.e("", "");
+				}
+				
 			}
 		}.start();
 	}
 	public void addItemToPlayService(SimpleData item) throws RemoteException{
-		if(onbind){
-			playbackService.addItem(item);
-		}
-	}
-	private boolean isPlaybackServiceRunning() {
-		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-		List<RunningServiceInfo> services = manager
-				.getRunningServices(Integer.MAX_VALUE);
-		String mServiceName = PlayBackService.class.getName();
-		for (int i = 0; i < services.size(); i++) {
-			if (services.get(i).service.getClassName().equals(mServiceName)) {
-				return true;
+		if(AppContextUtils.isPlaybackServiceRunning(getApplicationContext())){
+			if(onbind){
+				playbackService.addItem(item);
 			}
+		}else{
+			final Intent i = new Intent(getApplicationContext(), PlayBackService.class);
+			i.setAction(PlayBackService.ACTION_START_WITH_ITEM);
+			i.putExtra(PlayBackService.EXTRA_PLAY_ITEM, item);
+			startService(i);
+			mViewPager.postDelayed(new Runnable() {
+				
+				@Override
+				public void run() {
+					bindService(i, conn, BIND_AUTO_CREATE);
+					controlSet.setVisibility(View.VISIBLE);
+					IntentFilter iFilter = new IntentFilter();
+					iFilter.addAction(PlayBackService.ACTION_PLAYER_STATE_CHANGE);
+					registerReceiver(receiver, iFilter);
+					//mViewPager.invalidate();
+				}
+			}, 500);
+			
 		}
-
-		return false;
+		Toast.makeText(this, "已添加到播放列表", Toast.LENGTH_SHORT).show();
+		
 	}
+	
 
 	private Fragment getCurrentFragment() {
 
@@ -306,6 +317,7 @@ public class MusicBrowse extends FragmentActivity {
 		switch (v.getId()) {
 		case R.id.browser_control_info:
 			Intent intent = new Intent(this, MusicPlay.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 			startActivity(intent);
 			break;
 		case R.id.browser_ib_prev:

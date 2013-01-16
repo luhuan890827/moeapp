@@ -18,4 +18,7 @@ List<SimpleData> getList();
 SimpleData getCurrentItem();
 int getListSize();
 void addItem(in SimpleData item);
+void removeItem(int index);
+void clearList();
+void randPlay();
 }

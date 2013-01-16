@@ -1,6 +1,7 @@
 package fm.moe.luhuan;
 import fm.moe.luhuan.R;
 import fm.moe.luhuan.http.MoeHttp;
+import fm.moe.luhuan.utils.AppContextUtils;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -35,11 +36,15 @@ public class AppInit extends Activity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		// getActionBar().hide();
 		setContentView(R.layout.app_init);
+		if(AppContextUtils.isPlaybackServiceRunning(getApplicationContext())){
+			Intent intent = new Intent(this,MusicBrowse.class);
+			startActivity(intent);
+			this.finish();
+		}
 		oauth = new MoeHttp(this);
 		logo = (ImageView) findViewById(R.id.init_logo);
 		wv = (WebView) findViewById(R.id.oauth_wv);

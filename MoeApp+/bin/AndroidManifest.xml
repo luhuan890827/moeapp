@@ -27,20 +27,20 @@
         <activity
             android:name=".MusicBrowse"
             android:label="@string/browse"
-            android:launchMode="singleInstance" >
+            android:launchMode="singleTask" >
             <meta-data
                 android:name="android.app.default_searchable"
-                android:value=".activities.SearchableActivity" />
+                android:value=".SearchableActivity" />
         </activity>
         <activity
             android:name=".MusicPlay"
             android:label="正在播放"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             
              >
             <meta-data
                 android:name="android.app.default_searchable"
-                android:value=".activities.SearchableActivity" />
+                android:value=".SearchableActivity" />
         </activity>
         <activity
             android:name=".SearchableActivity"
@@ -59,6 +59,17 @@
         <service
             android:name=".service.PlayService"
             android:process=":playback" />
+        <service
+            android:name=".service.PlayBackService"
+            android:process=":playback" >
+            <intent-filter 
+                
+                >
+                <action android:name="android.intent.action.HEADSET_PLUG"/>
+                
+            </intent-filter>
+            
+        </service>
         <service android:name=".service.DownloadService" />
         <service android:name=".service.QueueDownloadService" />
     </application>

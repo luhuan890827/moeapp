@@ -6,9 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import com.alibaba.fastjson.JSON;
-//
 import fm.moe.luhuan.R;
 import fm.moe.luhuan.adapter.SimpleDataAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
@@ -18,21 +16,18 @@ import fm.moe.luhuan.service.DownloadService;
 import fm.moe.luhuan.service.PlayBackService;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.service.QueueDownloadService;
+import fm.moe.luhuan.utils.AppContextUtils;
 import fm.moe.luhuan.utils.DataStorageHelper;
 import fm.moe.luhuan.utils.MyUncaughtExceptionHandler;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
-
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-
 import android.content.res.Resources.NotFoundException;
 
 import android.graphics.Bitmap;
@@ -45,7 +40,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.RemoteException;
 
 import android.text.Html;
@@ -57,6 +51,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -90,27 +85,33 @@ public class MusicPlay extends Activity {
 	private ConnectivityManager connectivityManager;
 	private boolean onbind = false;
 	private IPlaybackService playbackService;
+	private AlertDialog dialog;
+	private int selectedDialogMenuIndex;
 	private ServiceConnection servConn = new ServiceConnection() {
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
 			onbind = false;
+			mHandler.removeCallbacks(refreshPlayingStatusRunnable);
 		}
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			onbind = true;
+
 			playbackService = IPlaybackService.Stub.asInterface(service);
-			
-				try {
-					SimpleDataAdapter adapter = new SimpleDataAdapter(MusicPlay.this, playbackService.getList());
-					listView.setAdapter(adapter);
-					listView.setOnItemClickListener(onListViewClick);
-				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			
+			mHandler.post(refreshPlayingStatusRunnable);
+			try {
+				SimpleDataAdapter adapter = new SimpleDataAdapter(
+						MusicPlay.this, playbackService.getList());
+				listView.setAdapter(adapter);
+				listView.setOnItemClickListener(onListViewClick);
+				listView.setOnItemLongClickListener(onItemLongClick);
+				
+			} catch (RemoteException e) {
+				Log.e("", "", e);
+				e.printStackTrace();
+			}
 
 			try {
 				setDisplayInfo();
@@ -132,7 +133,7 @@ public class MusicPlay extends Activity {
 		MyUncaughtExceptionHandler.getInstance().bind(this);
 
 		setContentView(R.layout.player);
-		Log.e("music play", "create");
+		//Log.e("music play", "create");
 		initViews();
 		listView = (ListView) findViewById(R.id.player_list_view);
 		songView = (RelativeLayout) findViewById(R.id.player_song_view);
@@ -144,69 +145,34 @@ public class MusicPlay extends Activity {
 
 		connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 		NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
-
-		Intent incomingIntent = getIntent();
-		Bundle bundle = incomingIntent.getExtras();
-		String action = incomingIntent.getAction();
-		if (bundle != null) {
-
-			// from browser
-			if (action == null && !isPlaybackServiceRunning()) {
-
-				Intent serviceIntent = new Intent(this, PlayBackService.class);
-				serviceIntent.putExtras(bundle);
-
-				startService(serviceIntent);
-			}
-			
-
-		}
-		// throw new NullPointerException();
+		dialog = AppContextUtils.createSimpleDialogListMenu(this,
+				android.R.drawable.ic_dialog_info, "操作", R.layout.dialog_item,
+				new String[] { "移除该项", "清空列表", "随机播放" }, onDialogListItemClick);
 
 	}
 
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
-
-		Bundle bundle = intent.getExtras();
-		String action = intent.getAction();
-		if (bundle != null) {
-
-			// from browser
-			if (action == null) {
-
-				Intent serviceIntent = new Intent(this, PlayBackService.class);
-				serviceIntent.putExtras(bundle);
-
-				startService(serviceIntent);
-			}
-
-		}
 	}
 
 	@Override
 	protected void onStart() {
 
 		super.onStart();
-		if (!isPlaybackServiceRunning()) {
+		if (!AppContextUtils.isPlaybackServiceRunning(getApplicationContext())) {
 			Intent i = new Intent(this, MusicBrowse.class);
+			i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 			startActivity(i);
+
 			this.finish();
-			Looper.loop();
 		} else {
-			mHandler.post(refreshPlayingStatusRunnable);
+
 			Intent bindIntent = new Intent(this, PlayBackService.class);
 
 			bindService(bindIntent, servConn, BIND_AUTO_CREATE);
 			registerReceiver(broadcastReceiver, intentFilter);
-			if (onbind) {
-				try {
-					playbackService.stopAsForeGround();
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-			}
+
 		}
 
 	}
@@ -221,7 +187,7 @@ public class MusicPlay extends Activity {
 				}
 
 			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
+				Log.e("", "", e);
 				e.printStackTrace();
 			}
 		}
@@ -249,7 +215,9 @@ public class MusicPlay extends Activity {
 	public void onBackPressed() {
 
 		Intent intent = new Intent(this, MusicBrowse.class);
+		intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 		startActivity(intent);
+		this.finish();
 
 	}
 
@@ -258,20 +226,6 @@ public class MusicPlay extends Activity {
 		startSearch(null, false, null, false);
 
 		return true;
-	}
-
-	private boolean isPlaybackServiceRunning() {
-		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-		List<RunningServiceInfo> services = manager
-				.getRunningServices(Integer.MAX_VALUE);
-		String mServiceName = PlayBackService.class.getName();
-		for (int i = 0; i < services.size(); i++) {
-			if (services.get(i).service.getClassName().equals(mServiceName)) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	private void initViews() {
@@ -349,7 +303,15 @@ public class MusicPlay extends Activity {
 					Bitmap bm = fileHelper.getItemCoverBitmap(item);
 					// Log.e("loading bitmap", albumnCoverUrl);
 					if (bm == null) {
-						bm = commonHttp.getBitmap(item.getAlbumnCoverUrl());
+						try {
+							bm = commonHttp.getBitmap(item.getAlbumnCoverUrl());
+						} catch (IllegalStateException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 
 					}
 
@@ -487,9 +449,9 @@ public class MusicPlay extends Activity {
 						SimpleData item = null;
 						try {
 							item = playbackService.getCurrentItem();
-						} catch (RemoteException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
+						} catch (RemoteException e) {
+							Log.e("", "", e);
+							e.printStackTrace();
 						}
 						if (item.isFav()) {
 							ope = "delete";
@@ -600,11 +562,10 @@ public class MusicPlay extends Activity {
 						} else
 							try {
 								if (tarIndex > playbackService.getListSize() - 1) {
-									tarIndex = playbackService.getListSize() - 1;
+									tarIndex = 0;
 								}
-							} catch (RemoteException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
+							} catch (RemoteException e) {
+								e.printStackTrace();
 							}
 						try {
 							playbackService.playSongAtIndex(tarIndex);
@@ -835,6 +796,68 @@ public class MusicPlay extends Activity {
 				}
 			}
 
+		}
+	};
+	private OnItemLongClickListener onItemLongClick = new OnItemLongClickListener() {
+
+		@Override
+		public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
+				int arg2, long arg3) {
+			dialog.show();
+			selectedDialogMenuIndex = arg2;
+			return false;
+		}
+	};
+	//{ "移除该项", "清空列表", "随机播放" }
+	private OnItemClickListener onDialogListItemClick = new OnItemClickListener() {
+
+		@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+		@Override
+		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
+				long arg3) {
+			switch (arg2) {
+			case 0:
+				try {
+					playbackService.removeItem(selectedDialogMenuIndex);
+					
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				break;
+			case 1:
+				try {
+					playbackService.clearList();
+					MusicPlay.this.finish();
+					playbackService.pause();
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				break;
+				
+			case 2:
+				try {
+					playbackService.randPlay();
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				break;
+			default:
+				break;
+			}
+			
+			try {
+				SimpleDataAdapter adapter = new SimpleDataAdapter(getApplicationContext(), playbackService.getList());
+				listView.setAdapter(adapter);
+				getActionBar().setTitle(
+						"正在播放:" + (playbackService.getNowIndex() + 1) + "/" + playbackService.getListSize());
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			dialog.dismiss();
 		}
 	};
 

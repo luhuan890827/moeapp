@@ -5,6 +5,8 @@ import java.util.List;
 
 import fm.moe.luhuan.adapter.MyCursorAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
+import fm.moe.luhuan.service.PlayBackService;
+import fm.moe.luhuan.utils.AppContextUtils;
 import fm.moe.luhuan.utils.DataStorageHelper;
 import fm.moe.luhuan.utils.MoeDbHelper;
 import android.app.AlertDialog;
@@ -36,6 +38,7 @@ public class DownloadedPageFragment extends Fragment {
 	private AlertDialog dialog;
 	private int pickedItemId;
 	private DataStorageHelper dataHelper;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -49,19 +52,10 @@ public class DownloadedPageFragment extends Fragment {
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(onItemClick);
 		listView.setOnItemLongClickListener(onImteLongClick);
-		
-		dialog = new AlertDialog.Builder(getActivity()).create();
-		ArrayAdapter<String> dialogAdapter = new ArrayAdapter<String>(
-				getActivity(), R.layout.dialog_item);
-		dialogAdapter.add("删除");
-		dialogAdapter.add("删除全部");
-		dialogAdapter.add("添加到当前播放列表");
-		dialog.setTitle("操作");
-		dialog.setIcon(android.R.drawable.btn_dialog);
-		ListView dialogList = new ListView(getActivity());
-		dialogList.setAdapter(dialogAdapter);
-		dialogList.setOnItemClickListener(onDialogItemClick);
-		dialog.setView(dialogList);
+
+		dialog = AppContextUtils.createSimpleDialogListMenu(getActivity(),
+				android.R.drawable.btn_dialog, "操作", R.layout.dialog_item,
+				new String[] { "删除", "全部删除", "添加到当前列表" }, onDialogItemClick);
 	}
 
 	@Override
@@ -89,7 +83,8 @@ public class DownloadedPageFragment extends Fragment {
 			Intent playIntent = new Intent(getActivity(), MusicPlay.class);
 			Bundle bundle = new Bundle();
 
-			bundle.putSerializable("playList", (ArrayList<SimpleData>) dataHelper.getDownloadedList());
+			bundle.putSerializable("playList",
+					(ArrayList<SimpleData>) dataHelper.getDownloadedList());
 			bundle.putInt("selectedIndex", arg2);
 			bundle.putString("playListId", arg0.getTag(R.string.play_list_id)
 					+ "");
@@ -97,6 +92,8 @@ public class DownloadedPageFragment extends Fragment {
 			playIntent.putExtras(bundle);
 
 			startActivity(playIntent);
+			getActivity().startService(
+					playIntent.setClass(getActivity(), PlayBackService.class));
 		}
 	};
 	private OnItemLongClickListener onImteLongClick = new OnItemLongClickListener() {
@@ -117,36 +114,39 @@ public class DownloadedPageFragment extends Fragment {
 				long arg3) {
 			switch (arg2) {
 			case 0:
-				if(dataHelper.deleteItemById(pickedItemId)){
-					Toast.makeText(getActivity(), "删除成功", Toast.LENGTH_SHORT).show();
-					CursorAdapter adapter = (CursorAdapter) listView.getAdapter();
-					
-					if(!db.isOpen()){
+				if (dataHelper.deleteItemById(pickedItemId)) {
+					Toast.makeText(getActivity(), "删除成功", Toast.LENGTH_SHORT)
+							.show();
+					CursorAdapter adapter = (CursorAdapter) listView
+							.getAdapter();
+
+					if (!db.isOpen()) {
 						MoeDbHelper dbHelper = new MoeDbHelper(getActivity());
 						db = dbHelper.getWritableDatabase();
 					}
-					adapter.changeCursor(db.rawQuery("select * from " + MoeDbHelper.TABLE_NAME
-							+ " order by insert_time", null));
-					
+					adapter.changeCursor(db.rawQuery("select * from "
+							+ MoeDbHelper.TABLE_NAME + " order by insert_time",
+							null));
+
 				}
-				
+
 				break;
 			case 1:
 
 				break;
 			case 2:
-//				SimpleData item = dataHelper.getItemById(pickedItemId);
-//				try {
-//					((MusicBrowse)getActivity()).addItemToPlayService(item);
-//				} catch (RemoteException e) {
-//					Log.e("", "",e);
-//					e.printStackTrace();
-//				}
-				
+				SimpleData item = dataHelper.getItemById(pickedItemId);
+				try {
+					((MusicBrowse) getActivity()).addItemToPlayService(item);
+				} catch (RemoteException e) {
+					Log.e("", "", e);
+					e.printStackTrace();
+				}
+
 				break;
 			default:
 				break;
-				
+
 			}
 			dialog.dismiss();
 		}

@@ -27,7 +27,7 @@
         <activity
             android:name=".MusicBrowse"
             android:label="@string/browse"
-            android:launchMode="singleInstance" >
+            android:launchMode="singleTask" >
             <meta-data
                 android:name="android.app.default_searchable"
                 android:value=".SearchableActivity" />
@@ -35,7 +35,7 @@
         <activity
             android:name=".MusicPlay"
             android:label="正在播放"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             
              >
             <meta-data

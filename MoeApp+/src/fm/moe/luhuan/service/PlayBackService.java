@@ -43,7 +43,9 @@ public class PlayBackService extends Service{
 	private PendingIntent pIntent;
 	private boolean onbind;
 	//private static final int NOTIFICATION_ID =PlayBackService.class.hashCode();
+	public static final String ACTION_START_WITH_ITEM = "with one item";
 	public static final String ACTION_PLAYER_STATE_CHANGE = "player state change";
+	public static final String EXTRA_PLAY_ITEM = "the item";
 	public static final String EXTRA_PLAYLIST = "playList";
 	public static final String EXTRA_PLAYLIST_ID = "playListId";
 	public static final String EXTRA_SELECTED_INDEX = "selectedIndex";
@@ -52,6 +54,7 @@ public class PlayBackService extends Service{
 	public static final int PLAYER_PREPARED = 1;
 	public static final int PLAYER_BURRERING = 2;
 	public static final int PLAYER_COMPLETION =3;
+	
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -70,14 +73,24 @@ public class PlayBackService extends Service{
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		if(intent!=null){
+		String action = intent.getAction();
+		if(action!=null){
+			playList = new ArrayList<SimpleData>();
+			playList.add((SimpleData) intent.getParcelableExtra(EXTRA_PLAY_ITEM));
+			nowIndex=0;
+			playSongAtIndex(0);
+			
+		}else{
 			Bundle data = intent.getExtras();
 			playList = (ArrayList<SimpleData>) data.get(EXTRA_PLAYLIST);
 			nowIndex = data.getInt(EXTRA_SELECTED_INDEX);
 			playListId = data.getString(EXTRA_PLAYLIST_ID);
 			playSongAtIndex(nowIndex);
-			sID = startId;
+			
+		
 		}
+		
+		sID = startId;
 		
 		return START_NOT_STICKY;
 	}
@@ -234,6 +247,35 @@ public class PlayBackService extends Service{
 		@Override
 		public void addItem(SimpleData item) throws RemoteException {
 			playList.add(item);
+		}
+
+		@Override
+		public void removeItem(int index) throws RemoteException {
+			playList.remove(index);
+		}
+
+		@Override
+		public void clearList() throws RemoteException {
+			playList.clear();
+		}
+
+		@Override
+		public void randPlay() throws RemoteException {
+			int size = playList.size();
+			
+			ArrayList<SimpleData > newList = new ArrayList<SimpleData>(size);
+			for(int i = 0;i<playList.size();i++){
+				int temp=0;
+				SimpleData item = null;
+				while(item==null){
+					temp = (int) (size*Math.random());
+					item = playList.get(temp);
+				}
+				playList.set(temp, null);
+				newList.add(item);
+			}
+			playList = newList;
+			PlayBackService.this.playSongAtIndex(0);
 		}
 		
 		

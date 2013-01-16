@@ -8,6 +8,8 @@ import java.io.IOException;
 
 import java.io.Serializable;
 
+import org.apache.http.client.ClientProtocolException;
+
 
 import fm.moe.luhuan.MusicPlay;
 import fm.moe.luhuan.beans.data.SimpleData;
@@ -136,8 +138,17 @@ public class DownloadService extends IntentService {
 			}
 				//consider custom the view of the notification to show the download progress
 			
-			BufferedInputStream bis = new BufferedInputStream(
-					http.downloadRanged(item.getMp3Url(), nStart, fLength));
+			BufferedInputStream bis = null;
+			try {
+				bis = new BufferedInputStream(
+						http.downloadRanged(item.getMp3Url(), nStart, fLength));
+			} catch (ClientProtocolException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			try {
 				while ((nRead = bis.read(data, 0, 1024 * 8)) > 0) {
 
@@ -161,7 +172,16 @@ public class DownloadService extends IntentService {
 		}
 
 		if (fileHelper.getItemCoverBitmap(item) == null) {
-			Bitmap bm = http.getBitmap(item.getAlbumnCoverUrl());
+			Bitmap bm = null;
+			try {
+				bm = http.getBitmap(item.getAlbumnCoverUrl());
+			} catch (IllegalStateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			fileHelper.saveCover(item, bm);
 		}
 		

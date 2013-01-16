@@ -17,7 +17,7 @@ public class MyUncaughtExceptionHandler implements UncaughtExceptionHandler{
 	private  MyUncaughtExceptionHandler(){
 	}
 	public static MyUncaughtExceptionHandler getInstance (){
-		return instance;
+		return instance; 
 	}
 	public void bind(Context c){
 		ctx = c;
@@ -26,15 +26,15 @@ public class MyUncaughtExceptionHandler implements UncaughtExceptionHandler{
 	}
 	@Override
 	public void uncaughtException(Thread thread, Throwable ex) {
-		//Log.e("", "",ex);
+		Log.e("", "",ex);
 		
 		
-		ctx.stopService(new Intent(ctx, PlayBackService.class));
-		Intent i = new Intent(ctx, MusicBrowse.class) ;
-		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		ctx.startActivity(i);
-		Looper.loop();
-		//defaultHandler.uncaughtException(thread, ex);
+//		ctx.stopService(new Intent(ctx, PlayBackService.class));
+//		Intent i = new Intent(ctx, MusicBrowse.class) ;
+//		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//		ctx.startActivity(i);
+//		Looper.loop();
+		defaultHandler.uncaughtException(thread, ex);
 	}
 
 }

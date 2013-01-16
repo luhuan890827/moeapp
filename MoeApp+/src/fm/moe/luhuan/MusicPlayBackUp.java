@@ -260,7 +260,15 @@ public class MusicPlayBackUp extends Activity {
 							.get(nowIndex));
 					// Log.e("loading bitmap", albumnCoverUrl);
 					if (bm == null) {
-						bm = commonHttp.getBitmap(albumnCoverUrl);
+						try {
+							bm = commonHttp.getBitmap(albumnCoverUrl);
+						} catch (IllegalStateException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 
 					}
 

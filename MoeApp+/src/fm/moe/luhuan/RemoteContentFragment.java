@@ -12,6 +12,7 @@ import com.alibaba.fastjson.JSONObject;
 import fm.moe.luhuan.adapter.SimpleDataAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.MoeHttp;
+import fm.moe.luhuan.service.PlayBackService;
 import fm.moe.luhuan.service.PlayService;
 import fm.moe.luhuan.utils.JSONUtils;
 import android.app.Activity;
@@ -110,7 +111,7 @@ public abstract class RemoteContentFragment extends Fragment {
 
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
-			// check for connectivity
+			listView.removeFooterView(loadMoreBtn);
 			pushToStack();
 			listView.addFooterView(loadingProgress);
 			listView.setAdapter(null);
@@ -143,8 +144,9 @@ public abstract class RemoteContentFragment extends Fragment {
 					arg0.getTag(R.string.play_list_id) + "");
 			bundle.putBoolean(PlayService.EXTRA_IF_NEED_NETWORK, true);
 			playIntent.putExtras(bundle);
-
+			
 			startActivity(playIntent);
+			getActivity().startService(playIntent.setClass(getActivity(), PlayBackService.class));
 
 		}
 	};
