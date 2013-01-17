@@ -27,6 +27,8 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.text.Html;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -169,10 +171,26 @@ public class MusicBrowse extends FragmentActivity {
 	}
 
 	@Override
-	protected void onNewIntent(Intent intent) {
-		super.onNewIntent(intent);
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// TODO Auto-generated method stub
+		return super.onOptionsItemSelected(item);
 	}
-
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.browse_menu, menu);
+		return true;
+	}
+	@Override
+	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+		
+		switch(item.getItemId()){
+			case R.id.menu_download:
+				Intent intent = new Intent(getApplicationContext(), ManageDownload.class);
+				startActivity(intent);
+				break;
+		}
+		return super.onMenuItemSelected(featureId, item);
+	}
 	private void setCTRLArea(final SimpleData data) {
 
 		if (data.getArtist().equals("")) {
@@ -279,7 +297,7 @@ public class MusicBrowse extends FragmentActivity {
 			case 0:
 				f = new ExplorePageFragment();
 				args.putStringArray(RemoteContentFragment.EXTRA_GROUP_TAGS,
-						new String[] { "音乐热榜>>>", "精选电台>>>", "魔力播放>>>" });
+						new String[] { "音乐热榜>>>", "精选电台>>>", "随便听听>>>" });
 				break;
 			case 1:
 				f = new FavPageFragment();
@@ -359,7 +377,7 @@ public class MusicBrowse extends FragmentActivity {
 			((ImageButton) v).setImageDrawable(getResources().getDrawable(
 					android.R.drawable.ic_media_play));
 			playbackService.pause();
-			playbackService.stopAsForeGround();
+			
 		} else if (playbackService.isPlayerPrepared()) {
 
 			((ImageButton) v).setImageDrawable(getResources().getDrawable(

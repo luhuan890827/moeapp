@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.R;
-import android.R.bool;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -23,6 +22,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
+import android.text.Html;
 import android.util.Log;
 import fm.moe.luhuan.IPlaybackService;
 import fm.moe.luhuan.MusicPlay;
@@ -41,8 +41,8 @@ public class PlayBackService extends Service{
 	private boolean isPrepared;
 	private Notification mNotification;
 	private PendingIntent pIntent;
-	private boolean onbind;
-	//private static final int NOTIFICATION_ID =PlayBackService.class.hashCode();
+	
+	private static final int NOTIFICATION_ID =PlayBackService.class.hashCode();
 	public static final String ACTION_START_WITH_ITEM = "with one item";
 	public static final String ACTION_PLAYER_STATE_CHANGE = "player state change";
 	public static final String EXTRA_PLAY_ITEM = "the item";
@@ -62,18 +62,21 @@ public class PlayBackService extends Service{
 		mPlayer = new MediaPlayer();
 		setPlayerListeners();
 		ntfManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		
 		nBuilder = new NotificationCompat.Builder(this);
 		Intent intent = new Intent(this,MusicPlay.class);
 		pIntent = PendingIntent.getActivity(this, 0, intent, Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 		nBuilder.setContentIntent(pIntent);
 		dataHelper = new DataStorageHelper(this);
-		registerReceiver(receiver, new IntentFilter());
+		IntentFilter intentFilter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
+		registerReceiver(receiver, intentFilter);
 		
 	}
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		String action = intent.getAction();
+		
 		if(action!=null){
 			playList = new ArrayList<SimpleData>();
 			playList.add((SimpleData) intent.getParcelableExtra(EXTRA_PLAY_ITEM));
@@ -86,10 +89,10 @@ public class PlayBackService extends Service{
 			nowIndex = data.getInt(EXTRA_SELECTED_INDEX);
 			playListId = data.getString(EXTRA_PLAYLIST_ID);
 			playSongAtIndex(nowIndex);
-			
-		
 		}
-		
+		SimpleData item = playList.get(nowIndex);
+		mNotification = buildNotification(R.drawable.ic_media_play, item.getTitle(), "正在播放", item.getTitle());
+		ntfManager.notify(NOTIFICATION_ID, mNotification);
 		sID = startId;
 		
 		return START_NOT_STICKY;
@@ -109,9 +112,11 @@ public class PlayBackService extends Service{
 		mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 	}
 	private void playSongAtIndex(int n){
+		
 		mPlayer.reset();
 		SimpleData item = playList.get(n);
-		sendNotification(R.drawable.ic_media_play, item.getTitle(), "正在播放", item.getTitle());
+		mNotification = buildNotification(R.drawable.ic_media_play, item.getTitle(), "正在播放", item.getTitle());
+		startForeground(sID, mNotification);
 		isPrepared = false;
 		String url = "";
 		try{
@@ -125,32 +130,23 @@ public class PlayBackService extends Service{
 		mPlayer.prepareAsync();
 		nowIndex = n;
 	}
-	private void sendNotification(int drawableId, String tickerText,
+	private Notification buildNotification(int drawableId, String tickerText,
 			String title, String content) {
+		ntfManager.cancelAll();
 		nBuilder.setSmallIcon(drawableId);
 		if(tickerText!=null){
-			nBuilder.setTicker("萌否音乐:" + tickerText);	
+			nBuilder.setTicker("萌否音乐:" + Html.fromHtml(tickerText));	
 		}
 		
-		nBuilder.setContentTitle("萌否音乐:" + title);
-		nBuilder.setContentText(content);
-		mNotification = nBuilder.build();
-		if(!onbind){
-			setAsForeGround();
-		}
+		nBuilder.setContentTitle("萌否音乐:" + Html.fromHtml(title));
+		nBuilder.setContentText(Html.fromHtml(content));
+		
+		return nBuilder.build();
 		
 		
 		
 	}
-	private void setAsForeGround(){
-		if(mNotification==null){
-			SimpleData item = playList.get(nowIndex);
-			sendNotification(R.drawable.ic_media_play, item.getTitle(), "正在播放", item.getTitle());
-		}
-		startForeground(sID, mNotification);
-		ntfManager.cancelAll();
-		
-	}
+	
 	public class PlayBackServiceImpl extends IPlaybackService.Stub {
 
 		@Override
@@ -177,11 +173,15 @@ public class PlayBackService extends Service{
 		@Override
 		public void pause() throws RemoteException {
 			mPlayer.pause();
+			stopForeground(true);
 		}
 
 		@Override
 		public void start() throws RemoteException {
 			mPlayer.start();
+			SimpleData item = playList.get(nowIndex);
+			mNotification = buildNotification(R.drawable.ic_media_play, null, "正在播放", item.getTitle());
+			startForeground(sID, mNotification);
 		}
 
 		@Override
@@ -201,15 +201,15 @@ public class PlayBackService extends Service{
 			mPlayer.seekTo(n)	;
 		}
 
-		@Override
-		public void setAsForeGround() throws RemoteException {
-			PlayBackService.this.setAsForeGround();
-		}
-
-		@Override
-		public void stopAsForeGround() throws RemoteException {
-			PlayBackService.this.stopForeground(true);
-		}
+//		@Override
+//		public void setAsForeGround() throws RemoteException {
+//			PlayBackService.this.setAsForeGround();
+//		}
+//
+//		@Override
+//		public void stopAsForeGround() throws RemoteException {
+//			PlayBackService.this.stopForeground(true);
+//		}
 
 		@Override
 		public List<SimpleData> getList() throws RemoteException {
@@ -283,13 +283,13 @@ public class PlayBackService extends Service{
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		onbind = true;
+		
 		
 		return new PlayBackServiceImpl();
 	}
 	@Override
 	public boolean onUnbind(Intent intent) {
-		onbind = false;
+		
 		return super.onUnbind(intent);
 	}
 	private OnErrorListener onPlayerErr = new OnErrorListener() {
@@ -305,6 +305,7 @@ public class PlayBackService extends Service{
 		public void onPrepared(MediaPlayer mp) {
 			isPrepared = true;
 			mp.start();
+			
 			Intent broadcast = new Intent(ACTION_PLAYER_STATE_CHANGE);
 			broadcast.putExtra(EXTRA_PLAYER_STATUS, PLAYER_PREPARED);
 			sendBroadcast(broadcast);
@@ -317,6 +318,8 @@ public class PlayBackService extends Service{
 		public void onCompletion(MediaPlayer mp) {
 			if (playList.size() - 1 > nowIndex) {
 				playSongAtIndex(++nowIndex);
+			}else{
+				stopForeground(true);
 			}
 			Intent broadcast = new Intent(ACTION_PLAYER_STATE_CHANGE);
 			broadcast.putExtra(EXTRA_PLAYER_STATUS, PLAYER_COMPLETION);
@@ -346,8 +349,10 @@ public class PlayBackService extends Service{
 			if (intent.getIntExtra("state", 1) == 0) {
 				if(mPlayer.isPlaying()){
 					mPlayer.pause();
-					sendNotification(R.drawable.ic_media_pause, "播放已暂停",
-							"播放已暂停", "耳机已拔出");
+					SimpleData item = playList.get(nowIndex);
+					mNotification = buildNotification(R.drawable.ic_media_pause, null, "播放已暂停", item.getTitle());
+					startForeground(sID, mNotification);
+					
 				}
 			}
 

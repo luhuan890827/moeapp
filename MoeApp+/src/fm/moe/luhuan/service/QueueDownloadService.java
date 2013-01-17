@@ -2,7 +2,9 @@ package fm.moe.luhuan.service;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.StreamCorruptedException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -32,12 +34,11 @@ import android.text.Html;
 import android.util.Log;
 
 public class QueueDownloadService extends Service {
-	private LinkedList<SimpleData> downloadList = new LinkedList<SimpleData>();
+	private LinkedList<SimpleData> downloadList ;
 	private Executor executor = new Executor() {
 
 		public void execute(Runnable command) {
 			new Thread(command).start();
-
 		}
 	};
 
@@ -63,6 +64,17 @@ public class QueueDownloadService extends Service {
 		notificationBuilder = new Builder(this);
 		notificationBuilder.setAutoCancel(true);
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		try {
+			 LinkedList<SimpleData> persisted = fileHelper.readDownloadList();
+			if(persisted!=null){
+				downloadList = persisted;
+			}else{
+				downloadList = new LinkedList<SimpleData>();
+			}
+		} catch(Exception e){
+			downloadList = new LinkedList<SimpleData>();
+			
+		}
 	}
 
 	@Override
@@ -76,16 +88,23 @@ public class QueueDownloadService extends Service {
 			SimpleData item = (SimpleData) intent
 					.getParcelableExtra(EXTRA_SONG_ITEM);
 			addTask(item);
+			List<SimpleData> list = intent.getParcelableArrayListExtra(EXTRA_SONG_ITEM_LIST);
+			addTasks(list);
 			startTasks();
+			
 		}
 		return START_NOT_STICKY;
 	}
-
+	 
 	private void addTask(SimpleData item) {
-		downloadList.add(item);
-		Bundle b = new Bundle();
-		b.putInt(EXTRA_DOWNLOAD_STATE, 0);
-		sendBroadcast(ACTION_DOWNLOAD_STATE_CHANGE, b);
+		if(item!=null){
+			downloadList.add(item);
+			Bundle b = new Bundle();
+			b.putInt(EXTRA_DOWNLOAD_STATE, 0);
+			sendBroadcast(ACTION_DOWNLOAD_STATE_CHANGE, b);
+			
+		}
+		
 	};
 
 	private void addTasks(List<SimpleData> l) {
@@ -143,6 +162,12 @@ public class QueueDownloadService extends Service {
 		}
 
 		public void run() {
+			try {
+				fileHelper.saveDownloadList(downloadList);
+			} catch (Exception e){
+				Log.e("", "",e);
+			}
+			
 			refreshProgress(100, 0);
 			sendNotification(R.drawable.stat_sys_download, "正在下载-"+item.getTitle(), "正在下载", Html
 					.fromHtml(item.getParentTitle()+"-"+item.getTitle()).toString());
@@ -215,7 +240,7 @@ public class QueueDownloadService extends Service {
 			if (downloadList.size() > 0) {
 				SimpleData nextItem = downloadList.getFirst();
 				DownloadRunnable runnable = new DownloadRunnable(nextItem);
-				DownloadTask task = new DownloadTask(runnable);
+				task = new DownloadTask(runnable);
 				executor.execute(task);
 			} else {
 				sendNotification(R.drawable.stat_sys_download_done, item.getTitle()

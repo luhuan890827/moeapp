@@ -11,9 +11,9 @@ void pause();
 void start();
 boolean isPlayerPrepared();
 boolean isPlayerPlaying();
-void setAsForeGround();
+
 void seekTo(int n);
-void stopAsForeGround();
+
 List<SimpleData> getList();
 SimpleData getCurrentItem();
 int getListSize();

@@ -25,7 +25,7 @@ public class SearchableActivity extends FragmentActivity {
 	public static final String EXTRA_SEARCH_RESULT_JSON = "result json";
 	public static final String EXTRA_SEARCH_URL = "searchUrl";
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -40,7 +40,7 @@ public class SearchableActivity extends FragmentActivity {
 
 	}
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);

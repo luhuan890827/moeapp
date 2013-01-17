@@ -78,22 +78,30 @@ public class DownloadedPageFragment extends Fragment {
 
 	private OnItemClickListener onItemClick = new OnItemClickListener() {
 
-		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
-				long arg3) {
-			Intent playIntent = new Intent(getActivity(), MusicPlay.class);
-			Bundle bundle = new Bundle();
+		public void onItemClick(final AdapterView<?> arg0, View arg1,
+				final int arg2, long arg3) {
+			new Thread() {
+				public void run() {
+					Intent playIntent = new Intent(getActivity(),
+							MusicPlay.class);
+					Bundle bundle = new Bundle();
 
-			bundle.putSerializable("playList",
-					(ArrayList<SimpleData>) dataHelper.getDownloadedList());
-			bundle.putInt("selectedIndex", arg2);
-			bundle.putString("playListId", arg0.getTag(R.string.play_list_id)
-					+ "");
+					bundle.putSerializable("playList",
+							(ArrayList<SimpleData>) dataHelper
+									.getDownloadedList());
+					bundle.putInt("selectedIndex", arg2);
+					bundle.putString("playListId",
+							arg0.getTag(R.string.play_list_id) + "");
 
-			playIntent.putExtras(bundle);
+					playIntent.putExtras(bundle);
 
-			startActivity(playIntent);
-			getActivity().startService(
-					playIntent.setClass(getActivity(), PlayBackService.class));
+					startActivity(playIntent);
+					getActivity().startService(
+							playIntent.setClass(getActivity(),
+									PlayBackService.class));
+				}
+			}.start();
+
 		}
 	};
 	private OnItemLongClickListener onImteLongClick = new OnItemLongClickListener() {
@@ -103,7 +111,7 @@ public class DownloadedPageFragment extends Fragment {
 				int arg2, long arg3) {
 			dialog.show();
 			pickedItemId = (Integer) arg1.getTag();
-			arg0.getSelectedItem();
+
 			return true;
 		}
 	};
@@ -114,34 +122,57 @@ public class DownloadedPageFragment extends Fragment {
 				long arg3) {
 			switch (arg2) {
 			case 0:
-				if (dataHelper.deleteItemById(pickedItemId)) {
-					Toast.makeText(getActivity(), "删除成功", Toast.LENGTH_SHORT)
-							.show();
-					CursorAdapter adapter = (CursorAdapter) listView
-							.getAdapter();
+				new Thread() {
+					public void run() {
+						if (dataHelper.deleteItemById(pickedItemId)) {
 
-					if (!db.isOpen()) {
-						MoeDbHelper dbHelper = new MoeDbHelper(getActivity());
-						db = dbHelper.getWritableDatabase();
+							final CursorAdapter adapter = (CursorAdapter) listView
+									.getAdapter();
+
+							if (!db.isOpen()) {
+								MoeDbHelper dbHelper = new MoeDbHelper(
+										getActivity());
+								db = dbHelper.getWritableDatabase();
+							}
+							
+							listView.post(new Runnable() {
+
+								@Override
+								public void run() {
+									adapter.changeCursor(db.rawQuery("select * from "
+											+ MoeDbHelper.TABLE_NAME
+											+ " order by insert_time", null));
+									Toast.makeText(getActivity(), "删除成功",
+											Toast.LENGTH_SHORT).show();
+
+								}
+							});
+						}
 					}
-					adapter.changeCursor(db.rawQuery("select * from "
-							+ MoeDbHelper.TABLE_NAME + " order by insert_time",
-							null));
-
-				}
+				}.start();
 
 				break;
 			case 1:
 
 				break;
 			case 2:
-				SimpleData item = dataHelper.getItemById(pickedItemId);
-				try {
-					((MusicBrowse) getActivity()).addItemToPlayService(item);
-				} catch (RemoteException e) {
-					Log.e("", "", e);
-					e.printStackTrace();
-				}
+				new Thread() {
+					public void run() {
+						final SimpleData item = dataHelper.getItemById(pickedItemId);
+						listView.post( new Runnable() {
+							public void run() {
+								try {
+									((MusicBrowse) getActivity())
+											.addItemToPlayService(item);
+								} catch (RemoteException e) {
+									Log.e("", "", e);
+									e.printStackTrace();
+								}
+							}
+						});
+						
+					}
+				}.start();
 
 				break;
 			default:

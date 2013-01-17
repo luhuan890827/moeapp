@@ -42,6 +42,7 @@ public class AppInit extends Activity {
 		setContentView(R.layout.app_init);
 		if(AppContextUtils.isPlaybackServiceRunning(getApplicationContext())){
 			Intent intent = new Intent(this,MusicBrowse.class);
+		
 			startActivity(intent);
 			this.finish();
 		}

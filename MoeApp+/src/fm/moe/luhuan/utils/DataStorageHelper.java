@@ -6,9 +6,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.StreamCorruptedException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.alibaba.fastjson.JSON;
@@ -150,7 +154,7 @@ public class DataStorageHelper {
 		db.close();
 	}
 
-	public boolean deleteItemById(int id) {
+	public  boolean deleteItemById(int id) {
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		db.delete(MoeDbHelper.TABLE_NAME, " _id=?", new String[] { id + "" });
 		db.close();
@@ -209,6 +213,23 @@ public class DataStorageHelper {
 			return data;
 		}
 		return null;
+	}
+	public void saveDownloadList(LinkedList<SimpleData> list) throws FileNotFoundException, IOException{
+		File persistFile = new File(ctx.getExternalFilesDir(null), "download.list");
+		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(persistFile));
+		oos.writeObject(list);
+		oos.close();
+	}
+	public LinkedList<SimpleData> readDownloadList() throws StreamCorruptedException, FileNotFoundException, IOException, ClassNotFoundException{
+		File persistFile = new File(ctx.getExternalFilesDir(null), "download.list");
+		if(!persistFile.exists()){
+			return null;
+		}
+		ObjectInputStream ois = new ObjectInputStream(new FileInputStream(persistFile));
+		
+		LinkedList<SimpleData> list = (LinkedList<SimpleData>)ois.readObject();
+		ois.close();
+		return list;
 	}
 
 }

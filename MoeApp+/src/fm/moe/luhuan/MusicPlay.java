@@ -126,7 +126,7 @@ public class MusicPlay extends Activity {
 
 	};
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -180,20 +180,15 @@ public class MusicPlay extends Activity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		if (onbind) {
-			try {
-				if (playbackService.isPlayerPlaying()) {
-					playbackService.setAsForeGround();
-				}
-
-			} catch (RemoteException e) {
-				Log.e("", "", e);
-				e.printStackTrace();
-			}
-		}
+		
 		mHandler.removeCallbacks(refreshPlayingStatusRunnable);
-		unregisterReceiver(broadcastReceiver);
-		unbindService(servConn);
+		try{
+			unregisterReceiver(broadcastReceiver);
+			unbindService(servConn);
+		}catch(IllegalArgumentException e){
+			Log.e("", "",e);
+		}
+		
 
 	}
 
@@ -242,7 +237,7 @@ public class MusicPlay extends Activity {
 
 	}
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	
 	private void setDisplayInfo() throws RemoteException, NotFoundException {
 		int nowIndex = playbackService.getNowIndex();
 		SimpleData item = playbackService.getCurrentItem();
@@ -608,7 +603,7 @@ public class MusicPlay extends Activity {
 					((ImageButton) v).setImageDrawable(getResources()
 							.getDrawable(android.R.drawable.ic_media_play));
 					playbackService.pause();
-					playbackService.stopAsForeGround();
+					
 				} else if (playbackService.isPlayerPrepared()) {
 
 					((ImageButton) v).setImageDrawable(getResources()
@@ -632,6 +627,7 @@ public class MusicPlay extends Activity {
 					downloadIntent.putExtras(getIntent());
 					downloadIntent.putExtra(DownloadService.EXTRA_SONG_ITEM,
 							item);
+					
 					startService(downloadIntent);
 				}
 			}
@@ -811,7 +807,7 @@ public class MusicPlay extends Activity {
 	//{ "移除该项", "清空列表", "随机播放" }
 	private OnItemClickListener onDialogListItemClick = new OnItemClickListener() {
 
-		@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+		
 		@Override
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {

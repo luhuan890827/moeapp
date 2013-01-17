@@ -12,10 +12,14 @@ import com.alibaba.fastjson.JSONObject;
 import fm.moe.luhuan.adapter.SimpleDataAdapter;
 import fm.moe.luhuan.beans.data.SimpleData;
 import fm.moe.luhuan.http.MoeHttp;
+import fm.moe.luhuan.service.DownloadService;
 import fm.moe.luhuan.service.PlayBackService;
 import fm.moe.luhuan.service.PlayService;
+import fm.moe.luhuan.service.QueueDownloadService;
+import fm.moe.luhuan.utils.AppContextUtils;
 import fm.moe.luhuan.utils.JSONUtils;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
@@ -23,6 +27,8 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
+import android.os.RemoteException;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -36,6 +42,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.LinearLayout;
 import android.widget.WrapperListAdapter;
 
@@ -49,8 +56,9 @@ public abstract class RemoteContentFragment extends Fragment {
 	protected ListView listView;
 	protected Stack<ListViewDataset> backStack = new Stack<ListViewDataset>();
 	protected AsyncTask asyncTask;
-
-	private final String PLAY_LIST_DATA_URL = "http://moe.fm/listen/playlist?api=json&";
+	protected SimpleData selectedItem;
+	protected AlertDialog popupMenu;
+	public final String PLAY_LIST_DATA_URL = "http://moe.fm/listen/playlist?api=json&perpage=20&";
 	public static final String EXTRA_GROUP_TAGS = "group tags";
 
 	@Override
@@ -67,6 +75,10 @@ public abstract class RemoteContentFragment extends Fragment {
 		http = new MoeHttp(getActivity());
 		listView = new ListView(getActivity());
 		loadMoreBtn.setOnClickListener(onLoadMoreBtnClick);
+		popupMenu = AppContextUtils.createSimpleDialogListMenu(getActivity(),
+				android.R.drawable.ic_dialog_info, "操作", R.layout.dialog_item,
+				new String[] { "添加到播放列表", "下载该曲目", "下载所有曲目" },
+				onDialogMenuClick);
 	}
 
 	@Override
@@ -144,10 +156,63 @@ public abstract class RemoteContentFragment extends Fragment {
 					arg0.getTag(R.string.play_list_id) + "");
 			bundle.putBoolean(PlayService.EXTRA_IF_NEED_NETWORK, true);
 			playIntent.putExtras(bundle);
-			
-			startActivity(playIntent);
-			getActivity().startService(playIntent.setClass(getActivity(), PlayBackService.class));
 
+			startActivity(playIntent);
+			getActivity().startService(
+					playIntent.setClass(getActivity(), PlayBackService.class));
+
+		}
+	};
+	protected OnItemClickListener onDialogMenuClick = new OnItemClickListener() {
+
+		@Override
+		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
+				long arg3) {
+			switch (arg2) {
+			case 0:
+				try {
+					((MusicBrowse) getActivity())
+							.addItemToPlayService(selectedItem);
+				} catch (RemoteException e) {
+					Log.e("", "", e);
+					e.printStackTrace();
+				}
+				Toast.makeText(getActivity(), "已添加到播放列表", Toast.LENGTH_SHORT)
+						.show();
+				break;
+			case 1:
+				Intent downloadIntent = new Intent(getActivity(),
+						QueueDownloadService.class);
+
+				downloadIntent.putExtra(QueueDownloadService.EXTRA_SONG_ITEM,
+						selectedItem);
+				getActivity().startService(downloadIntent);
+				break;
+			case 2://not working
+				List<SimpleData> list=((SimpleDataAdapter)listView.getAdapter()).getData();
+				Intent downloadIntent1 = new Intent(getActivity(),
+						QueueDownloadService.class);
+
+				downloadIntent1.putParcelableArrayListExtra(QueueDownloadService.EXTRA_SONG_ITEM_LIST,
+						(ArrayList<SimpleData>) list);
+				getActivity().startService(downloadIntent1);
+				break;
+			default:
+				break;
+			}
+			popupMenu.dismiss();
+			
+		}
+	};
+	
+	protected OnItemLongClickListener onItemPlongClick = new OnItemLongClickListener() {
+
+		@Override
+		public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
+				int arg2, long arg3) {
+			selectedItem = (SimpleData) listView.getItemAtPosition(arg2);
+			popupMenu.show();
+			return false;
 		}
 	};
 	protected OnClickListener onLoadMoreBtnClick = new OnClickListener() {
@@ -189,6 +254,7 @@ public abstract class RemoteContentFragment extends Fragment {
 			ListViewDataset set = backStack.pop();
 			listView.setAdapter(set.adapter);
 			listView.setOnItemClickListener(set.listener);
+			listView.setOnItemLongClickListener(null);
 			asyncTask.cancel(true);
 			listView.removeFooterView(loadingProgress);
 			listView.removeFooterView(loadMoreBtn);
@@ -221,7 +287,7 @@ public abstract class RemoteContentFragment extends Fragment {
 		protected List<SimpleData> doInBackground(Object... params) {
 			View v = (View) params[0];
 			String url = PLAY_LIST_DATA_URL + v.getTag(R.string.item_type)
-					+ "=" + v.getTag(R.string.item_id) + "&perpage=20";
+					+ "=" + v.getTag(R.string.item_id);
 			List<SimpleData> playList = null;
 			try {
 				String json = http.oauthRequest(url);
@@ -255,6 +321,7 @@ public abstract class RemoteContentFragment extends Fragment {
 						getActivity(), result);
 				listView.setAdapter(adapter);
 				listView.setOnItemClickListener(onPlaylistItemClick);
+				listView.setOnItemLongClickListener(onItemPlongClick);
 			} else {
 				backView();
 			}

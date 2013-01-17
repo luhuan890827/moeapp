@@ -206,58 +206,58 @@ public class MusicBrowseBackUp extends Activity {
 
 	private LinearLayout setVSaved() {
 
-		// TODO Auto-generated method stub
-		LinearLayout ll = (LinearLayout) inflater.inflate(
-				R.layout.list_wrapper, null);
-
-		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
-		vStatus.views.add(listView);
-
-		MoeDbHelper dbHelper = new MoeDbHelper(this);
-		db = dbHelper.getWritableDatabase();
-
-		 Cursor cursor = db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME+" order by insert_time",
-				null);
-		 
-		ListAdapter adapter = new MyCursorAdapter(getApplicationContext(), cursor,
-				false);
-		// 使用cursoradapter勿调用cursor.close();
-		
-		listView.setAdapter(adapter);
-		listView.setOnItemClickListener(onLocalItemClick);
-		return ll;
+//		LinearLayout ll = (LinearLayout) inflater.inflate(
+//				R.layout.list_wrapper, null);
+//
+//		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
+//		vStatus.views.add(listView);
+//
+//		MoeDbHelper dbHelper = new MoeDbHelper(this);
+//		db = dbHelper.getWritableDatabase();
+//
+//		 Cursor cursor = db.rawQuery("select * from "+MoeDbHelper.TABLE_NAME+" order by insert_time",
+//				null);
+//		 
+//		ListAdapter adapter = new MyCursorAdapter(getApplicationContext(), cursor,
+//				false);
+//		// 使用cursoradapter勿调用cursor.close();
+//		
+//		listView.setAdapter(adapter);
+//		listView.setOnItemClickListener(onLocalItemClick);
+//		return ll;
+		return null;
 	}
 
 	private LinearLayout setVFavs() {
-		// TODO Auto-generated method stub
-		LinearLayout ll = (LinearLayout) inflater.inflate(
-				R.layout.list_wrapper, null);
-
-		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
-		vStatus.views.add(listView);
-		String[] tags = new String[] { "收藏的专辑>>", "收藏的电台>>", "喜欢的歌曲>>" };
-		ListAdapter adapter = new ArrayAdapter<String>(this,
-				R.layout.big_text_item, tags);
-
-		listView.setAdapter(adapter);
-		listView.setOnItemClickListener(onMainCataClick);
-
-		return ll;
+//		LinearLayout ll = (LinearLayout) inflater.inflate(
+//				R.layout.list_wrapper, null);
+//
+//		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
+//		vStatus.views.add(listView);
+//		String[] tags = new String[] { "收藏的专辑>>", "收藏的电台>>", "喜欢的歌曲>>" };
+//		ListAdapter adapter = new ArrayAdapter<String>(this,
+//				R.layout.big_text_item, tags);
+//
+//		listView.setAdapter(adapter);
+//		listView.setOnItemClickListener(onMainCataClick);
+//
+//		return ll;
+		return null;
 	}
 
 	private LinearLayout setVExplore() {
 		LinearLayout ll = (LinearLayout) inflater.inflate(
 				R.layout.list_wrapper, null);
-
-		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
-
-		vStatus.views.add(listView);
-		String[] tags = new String[] { "音乐热榜>>>", "精选电台>>>", "魔力播放>>>" };
-		ListAdapter adapter = new ArrayAdapter<String>(this,
-				R.layout.big_text_item, tags);
-
-		listView.setAdapter(adapter);
-		listView.setOnItemClickListener(onMainCataClick);
+//
+//		ListView listView = (ListView) ll.findViewById(R.id.wrapped_list);
+//
+//		vStatus.views.add(listView);
+//		String[] tags = new String[] { "音乐热榜>>>", "精选电台>>>", "魔力播放>>>" };
+//		ListAdapter adapter = new ArrayAdapter<String>(this,
+//				R.layout.big_text_item, tags);
+//
+//		listView.setAdapter(adapter);
+//		listView.setOnItemClickListener(onMainCataClick);
 
 		return ll;
 	}

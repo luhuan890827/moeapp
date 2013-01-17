@@ -89,7 +89,7 @@ public class MusicPlayBackUp extends Activity {
 
 	// constants
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
