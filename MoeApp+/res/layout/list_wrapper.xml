@@ -5,21 +5,21 @@
     android:orientation="vertical" >
 
     <ListView
-        android:id="@+id/wrapped_list"
+        android:id="@android:id/list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         >
     </ListView>
 
     <LinearLayout
-        android:id="@+id/hint_layout"
+        android:id="@android:id/empty"
         android:gravity="center"
         android:padding="15dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="70dp"
       
          >
-        
+      <TextView style="@style/list_empty_hint_text" />  
         
     </LinearLayout>
 
