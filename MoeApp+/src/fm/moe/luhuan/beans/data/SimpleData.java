@@ -1,11 +1,9 @@
 package fm.moe.luhuan.beans.data;
 
-import java.io.Serializable;
-
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class SimpleData implements Parcelable {
+public class SimpleData  implements Parcelable {
 	/**
 	 * 
 	 */

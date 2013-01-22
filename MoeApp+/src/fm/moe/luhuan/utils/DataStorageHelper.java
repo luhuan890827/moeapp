@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
+import fm.moe.luhuan.beans.data.SerializableSimpleData;
 import fm.moe.luhuan.beans.data.SimpleData;
 import android.content.ContentValues;
 import android.content.Context;
@@ -27,6 +28,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Bitmap.CompressFormat;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.support.v4.os.ParcelableCompat;
 import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 
@@ -141,7 +145,7 @@ public class DataStorageHelper {
 		OutputStream os = new FileOutputStream(tempFile);
 		os.write(bas.toByteArray());
 		os.close();
-
+		
 		return tempFile.getAbsolutePath();
 	}
 
@@ -216,8 +220,9 @@ public class DataStorageHelper {
 	}
 	public void saveDownloadList(LinkedList<SimpleData> list) throws FileNotFoundException, IOException{
 		File persistFile = new File(ctx.getExternalFilesDir(null), "download.list");
+		List<SerializableSimpleData> sl = SerializableSimpleData.fromList(list);
 		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(persistFile));
-		oos.writeObject(list);
+		oos.writeObject(sl);
 		oos.close();
 	}
 	public LinkedList<SimpleData> readDownloadList() throws StreamCorruptedException, FileNotFoundException, IOException, ClassNotFoundException{
@@ -227,9 +232,9 @@ public class DataStorageHelper {
 		}
 		ObjectInputStream ois = new ObjectInputStream(new FileInputStream(persistFile));
 		
-		LinkedList<SimpleData> list = (LinkedList<SimpleData>)ois.readObject();
+		List<SerializableSimpleData> list = (List<SerializableSimpleData>)ois.readObject();
 		ois.close();
-		return list;
+		return SerializableSimpleData.toList(list);
 	}
 
 }

@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <uses-sdk
-        android:minSdkVersion="8"
+        android:minSdkVersion="11"
         android:targetSdkVersion="17" />
 
     <application
@@ -55,7 +55,7 @@
         </activity>
         <activity android:name=".AppPref" >
         </activity>
-
+		<activity android:name=".ManageDownload"></activity>
         <service
             android:name=".service.PlayService"
             android:process=":playback" />
@@ -72,6 +72,7 @@
         </service>
         <service android:name=".service.DownloadService" />
         <service android:name=".service.QueueDownloadService" />
+        
     </application>
 
 </manifest>

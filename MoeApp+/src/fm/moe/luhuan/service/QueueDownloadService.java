@@ -115,6 +115,11 @@ public class QueueDownloadService extends Service {
 	}
 
 	private void startTasks() {
+		try {
+			fileHelper.saveDownloadList(downloadList);
+		} catch (Exception e){
+			Log.e("", "",e);
+		}
 		if(task==null||task.isDone()){
 			SimpleData item = downloadList.get(0);
 			task = new DownloadTask(new DownloadRunnable(item));
@@ -162,11 +167,7 @@ public class QueueDownloadService extends Service {
 		}
 
 		public void run() {
-			try {
-				fileHelper.saveDownloadList(downloadList);
-			} catch (Exception e){
-				Log.e("", "",e);
-			}
+			
 			
 			refreshProgress(100, 0);
 			sendNotification(R.drawable.stat_sys_download, "正在下载-"+item.getTitle(), "正在下载", Html
@@ -184,22 +185,12 @@ public class QueueDownloadService extends Service {
 
 			ByteArrayOutputStream bao = new ByteArrayOutputStream();
 			while (nStart < fLength) {
-
-				// consider custom the view of the notification to show the
-				// download progress
-				Log.e("download", nStart + "");
+				//Log.e("download", nStart + "");
 				BufferedInputStream bis = null;
 				try {
 					bis = new BufferedInputStream(
 							http.downloadRanged(item.getMp3Url(), nStart, fLength));
-				} catch (ClientProtocolException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				try {
+				
 					while ((nRead = bis.read(data, 0, 1024 * 8)) > 0) {
 
 						bao.write(data, 0, nRead);

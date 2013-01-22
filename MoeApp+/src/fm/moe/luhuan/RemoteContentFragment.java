@@ -189,6 +189,10 @@ public abstract class RemoteContentFragment extends Fragment {
 				getActivity().startService(downloadIntent);
 				break;
 			case 2://not working
+				ListAdapter adapter = listView.getAdapter();
+				if(!adapter.getClass().getName().equals(SimpleDataAdapter.class.getName())){
+					adapter = ((WrapperListAdapter)adapter).getWrappedAdapter();
+				};
 				List<SimpleData> list=((SimpleDataAdapter)listView.getAdapter()).getData();
 				Intent downloadIntent1 = new Intent(getActivity(),
 						QueueDownloadService.class);
@@ -200,7 +204,7 @@ public abstract class RemoteContentFragment extends Fragment {
 			default:
 				break;
 			}
-			popupMenu.dismiss();
+			popupMenu.dismiss(); 
 			
 		}
 	};

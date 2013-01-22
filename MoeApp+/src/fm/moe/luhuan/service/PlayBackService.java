@@ -93,6 +93,9 @@ public class PlayBackService extends Service{
 		SimpleData item = playList.get(nowIndex);
 		mNotification = buildNotification(R.drawable.ic_media_play, item.getTitle(), "ÕýÔÚ²¥·Å", item.getTitle());
 		ntfManager.notify(NOTIFICATION_ID, mNotification);
+		startForeground(sID, mNotification);
+		//ntfManager.cancelAll();
+		//
 		sID = startId;
 		
 		return START_NOT_STICKY;
