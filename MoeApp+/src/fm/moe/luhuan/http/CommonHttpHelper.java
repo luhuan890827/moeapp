@@ -24,7 +24,10 @@ public class CommonHttpHelper {
 		HttpConnectionParams.setConnectionTimeout(params, 2000);
 		client = new DefaultHttpClient(params);
 	}
-
+	public String httpGet(String url){
+		
+		return null;
+	}
 	public Bitmap getBitmap(String url) throws IllegalStateException, IOException {
 		HttpGet request = new HttpGet(url);
 		Bitmap bm = null;

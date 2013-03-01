@@ -17,6 +17,7 @@ import android.content.ServiceConnection;
 import android.content.res.Resources.NotFoundException;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -266,7 +267,7 @@ public class MusicBrowse extends FragmentActivity {
 			
 		}
 		Toast.makeText(this, "已添加到播放列表", Toast.LENGTH_SHORT).show();
-		
+		//getContentResolver().query(Uri.parse(""), new String[]{"a"}, "a=? and b=?", new String[]{"1","2"}, "id desc");
 	}
 	
 

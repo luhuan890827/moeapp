@@ -24,6 +24,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
@@ -56,6 +58,7 @@ public class DownloadedPageFragment extends Fragment {
 		dialog = AppContextUtils.createSimpleDialogListMenu(getActivity(),
 				android.R.drawable.btn_dialog, "操作", R.layout.dialog_item,
 				new String[] { "删除", "全部删除", "添加到当前列表" }, onDialogItemClick);
+		Animation anim = AnimationUtils.loadAnimation(getActivity(), android.R.anim.fade_in);
 	}
 
 	@Override
