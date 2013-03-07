@@ -119,26 +119,12 @@ reply.writeNoException();
 reply.writeInt(((_result)?(1):(0)));
 return true;
 }
-case TRANSACTION_setAsForeGround:
-{
-data.enforceInterface(DESCRIPTOR);
-this.setAsForeGround();
-reply.writeNoException();
-return true;
-}
 case TRANSACTION_seekTo:
 {
 data.enforceInterface(DESCRIPTOR);
 int _arg0;
 _arg0 = data.readInt();
 this.seekTo(_arg0);
-reply.writeNoException();
-return true;
-}
-case TRANSACTION_stopAsForeGround:
-{
-data.enforceInterface(DESCRIPTOR);
-this.stopAsForeGround();
 reply.writeNoException();
 return true;
 }
@@ -383,20 +369,6 @@ _data.recycle();
 }
 return _result;
 }
-@Override public void setAsForeGround() throws android.os.RemoteException
-{
-android.os.Parcel _data = android.os.Parcel.obtain();
-android.os.Parcel _reply = android.os.Parcel.obtain();
-try {
-_data.writeInterfaceToken(DESCRIPTOR);
-mRemote.transact(Stub.TRANSACTION_setAsForeGround, _data, _reply, 0);
-_reply.readException();
-}
-finally {
-_reply.recycle();
-_data.recycle();
-}
-}
 @Override public void seekTo(int n) throws android.os.RemoteException
 {
 android.os.Parcel _data = android.os.Parcel.obtain();
@@ -405,20 +377,6 @@ try {
 _data.writeInterfaceToken(DESCRIPTOR);
 _data.writeInt(n);
 mRemote.transact(Stub.TRANSACTION_seekTo, _data, _reply, 0);
-_reply.readException();
-}
-finally {
-_reply.recycle();
-_data.recycle();
-}
-}
-@Override public void stopAsForeGround() throws android.os.RemoteException
-{
-android.os.Parcel _data = android.os.Parcel.obtain();
-android.os.Parcel _reply = android.os.Parcel.obtain();
-try {
-_data.writeInterfaceToken(DESCRIPTOR);
-mRemote.transact(Stub.TRANSACTION_stopAsForeGround, _data, _reply, 0);
 _reply.readException();
 }
 finally {
@@ -557,16 +515,14 @@ static final int TRANSACTION_pause = (android.os.IBinder.FIRST_CALL_TRANSACTION 
 static final int TRANSACTION_start = (android.os.IBinder.FIRST_CALL_TRANSACTION + 7);
 static final int TRANSACTION_isPlayerPrepared = (android.os.IBinder.FIRST_CALL_TRANSACTION + 8);
 static final int TRANSACTION_isPlayerPlaying = (android.os.IBinder.FIRST_CALL_TRANSACTION + 9);
-static final int TRANSACTION_setAsForeGround = (android.os.IBinder.FIRST_CALL_TRANSACTION + 10);
-static final int TRANSACTION_seekTo = (android.os.IBinder.FIRST_CALL_TRANSACTION + 11);
-static final int TRANSACTION_stopAsForeGround = (android.os.IBinder.FIRST_CALL_TRANSACTION + 12);
-static final int TRANSACTION_getList = (android.os.IBinder.FIRST_CALL_TRANSACTION + 13);
-static final int TRANSACTION_getCurrentItem = (android.os.IBinder.FIRST_CALL_TRANSACTION + 14);
-static final int TRANSACTION_getListSize = (android.os.IBinder.FIRST_CALL_TRANSACTION + 15);
-static final int TRANSACTION_addItem = (android.os.IBinder.FIRST_CALL_TRANSACTION + 16);
-static final int TRANSACTION_removeItem = (android.os.IBinder.FIRST_CALL_TRANSACTION + 17);
-static final int TRANSACTION_clearList = (android.os.IBinder.FIRST_CALL_TRANSACTION + 18);
-static final int TRANSACTION_randPlay = (android.os.IBinder.FIRST_CALL_TRANSACTION + 19);
+static final int TRANSACTION_seekTo = (android.os.IBinder.FIRST_CALL_TRANSACTION + 10);
+static final int TRANSACTION_getList = (android.os.IBinder.FIRST_CALL_TRANSACTION + 11);
+static final int TRANSACTION_getCurrentItem = (android.os.IBinder.FIRST_CALL_TRANSACTION + 12);
+static final int TRANSACTION_getListSize = (android.os.IBinder.FIRST_CALL_TRANSACTION + 13);
+static final int TRANSACTION_addItem = (android.os.IBinder.FIRST_CALL_TRANSACTION + 14);
+static final int TRANSACTION_removeItem = (android.os.IBinder.FIRST_CALL_TRANSACTION + 15);
+static final int TRANSACTION_clearList = (android.os.IBinder.FIRST_CALL_TRANSACTION + 16);
+static final int TRANSACTION_randPlay = (android.os.IBinder.FIRST_CALL_TRANSACTION + 17);
 }
 public int getNowIndex() throws android.os.RemoteException;
 public int getSongDuration() throws android.os.RemoteException;
@@ -578,9 +534,7 @@ public void pause() throws android.os.RemoteException;
 public void start() throws android.os.RemoteException;
 public boolean isPlayerPrepared() throws android.os.RemoteException;
 public boolean isPlayerPlaying() throws android.os.RemoteException;
-public void setAsForeGround() throws android.os.RemoteException;
 public void seekTo(int n) throws android.os.RemoteException;
-public void stopAsForeGround() throws android.os.RemoteException;
 public java.util.List<fm.moe.luhuan.beans.data.SimpleData> getList() throws android.os.RemoteException;
 public fm.moe.luhuan.beans.data.SimpleData getCurrentItem() throws android.os.RemoteException;
 public int getListSize() throws android.os.RemoteException;
